@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { CANONICAL_FDE_PROJECTION } from "@/lib/marketDataService";
 import {
   Compass,
   TrendingDown,
@@ -84,7 +85,7 @@ interface FdeProjectionData {
 }
 
 export default function FdePreMarketConsole({ initialData }: { initialData?: FdeProjectionData }) {
-  const [data, setData] = useState<FdeProjectionData | null>(initialData || null);
+  const [data, setData] = useState<FdeProjectionData>(initialData || CANONICAL_FDE_PROJECTION);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'VARIABLES' | 'CAUSAL_CHAIN' | 'TIMELINE'>('VARIABLES');
   const [loading, setLoading] = useState(false);
@@ -93,7 +94,7 @@ export default function FdePreMarketConsole({ initialData }: { initialData?: Fde
   const fetchProjection = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/api/eti/v1/market/fde-projection");
+      const res = await fetch("/api/eti/v1/market/fde-projection");
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -101,6 +102,9 @@ export default function FdePreMarketConsole({ initialData }: { initialData?: Fde
       }
     } catch (err) {
       console.error("Error al refrescar FDE:", err);
+      if (!data) {
+        setData(CANONICAL_FDE_PROJECTION);
+      }
     } finally {
       setLoading(false);
     }

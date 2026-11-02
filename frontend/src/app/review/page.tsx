@@ -31,7 +31,9 @@ export default function ReviewPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const engineUrl = process.env.NEXT_PUBLIC_ENGINE_URL || "http://localhost:3001";
+  const engineUrl = process.env.NEXT_PUBLIC_ENGINE_URL && !process.env.NEXT_PUBLIC_ENGINE_URL.includes("localhost")
+    ? process.env.NEXT_PUBLIC_ENGINE_URL
+    : "";
   const adminToken = process.env.NEXT_PUBLIC_ADMIN_TOKEN || "eti_admin_secret_token_2026";
 
   const fetchQueue = async () => {

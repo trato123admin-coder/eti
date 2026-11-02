@@ -4,32 +4,48 @@ import {
   Flame, BarChart2, Compass, Layers, CheckCircle2, AlertTriangle, Eye
 } from "lucide-react";
 import FdePreMarketConsole from "@/components/FdePreMarketConsole";
+import {
+  CANONICAL_INSTRUMENTS,
+  CANONICAL_BREADTH,
+  CANONICAL_MOVERS,
+  CANONICAL_HEATMAP,
+  CANONICAL_PROJECTIONS,
+  getFdeProjectionFromSupabase
+} from "@/lib/marketDataService";
 
-// Fetch live market data from Fastify Engine
+// Fetch live market data (with direct Supabase / Canonical fallback for cloud serverless deployments)
 async function getMarketData() {
-  const engineUrl = process.env.NEXT_PUBLIC_ENGINE_URL || "http://localhost:3001";
-  try {
-    const [instRes, breadthRes, moversRes, heatmapRes, projRes, fdeRes] = await Promise.all([
-      fetch(`${engineUrl}/api/eti/v1/market/instruments`, { cache: "no-store" }).catch(() => null),
-      fetch(`${engineUrl}/api/eti/v1/market/breadth`, { cache: "no-store" }).catch(() => null),
-      fetch(`${engineUrl}/api/eti/v1/market/movers`, { cache: "no-store" }).catch(() => null),
-      fetch(`${engineUrl}/api/eti/v1/market/heatmap`, { cache: "no-store" }).catch(() => null),
-      fetch(`${engineUrl}/api/eti/v1/market/projections`, { cache: "no-store" }).catch(() => null),
-      fetch(`${engineUrl}/api/eti/v1/market/fde-projection`, { cache: "no-store" }).catch(() => null)
-    ]);
+  const engineUrl = process.env.NEXT_PUBLIC_ENGINE_URL;
+  let instruments = CANONICAL_INSTRUMENTS;
+  let breadth = CANONICAL_BREADTH;
+  let movers = CANONICAL_MOVERS;
+  let heatmap = CANONICAL_HEATMAP;
+  let projections = CANONICAL_PROJECTIONS;
+  let fdeProjection = await getFdeProjectionFromSupabase();
 
-    const instruments = instRes && instRes.ok ? (await instRes.json()).instruments : [];
-    const breadth = breadthRes && breadthRes.ok ? await breadthRes.json() : null;
-    const movers = moversRes && moversRes.ok ? (await moversRes.json()).movers : [];
-    const heatmap = heatmapRes && heatmapRes.ok ? (await heatmapRes.json()).sectors : [];
-    const projections = projRes && projRes.ok ? (await projRes.json()).projections : [];
-    const fdeProjection = fdeRes && fdeRes.ok ? await fdeRes.json() : null;
+  if (engineUrl && !engineUrl.includes("localhost")) {
+    try {
+      const [instRes, breadthRes, moversRes, heatmapRes, projRes, fdeRes] = await Promise.all([
+        fetch(`${engineUrl}/api/eti/v1/market/instruments`, { cache: "no-store" }).catch(() => null),
+        fetch(`${engineUrl}/api/eti/v1/market/breadth`, { cache: "no-store" }).catch(() => null),
+        fetch(`${engineUrl}/api/eti/v1/market/movers`, { cache: "no-store" }).catch(() => null),
+        fetch(`${engineUrl}/api/eti/v1/market/heatmap`, { cache: "no-store" }).catch(() => null),
+        fetch(`${engineUrl}/api/eti/v1/market/projections`, { cache: "no-store" }).catch(() => null),
+        fetch(`${engineUrl}/api/eti/v1/market/fde-projection`, { cache: "no-store" }).catch(() => null)
+      ]);
 
-    return { instruments, breadth, movers, heatmap, projections, fdeProjection };
-  } catch (err) {
-    console.error("Error fetching market data from engine:", err);
-    return { instruments: [], breadth: null, movers: [], heatmap: [], projections: [], fdeProjection: null };
+      if (instRes && instRes.ok) instruments = (await instRes.json()).instruments || instruments;
+      if (breadthRes && breadthRes.ok) breadth = await breadthRes.json();
+      if (moversRes && moversRes.ok) movers = (await moversRes.json()).movers || movers;
+      if (heatmapRes && heatmapRes.ok) heatmap = (await heatmapRes.json()).sectors || heatmap;
+      if (projRes && projRes.ok) projections = (await projRes.json()).projections || projections;
+      if (fdeRes && fdeRes.ok) fdeProjection = await fdeRes.json();
+    } catch {
+      // Fallback ya configurado
+    }
   }
+
+  return { instruments, breadth, movers, heatmap, projections, fdeProjection };
 }
 
 export default async function MercadoAhoraPage() {

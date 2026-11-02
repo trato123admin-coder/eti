@@ -55,7 +55,7 @@ export default function FcgGraphVisualizerPage() {
   const fetchGraphData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/api/eti/v1/market/fde-projection");
+      const res = await fetch("/api/eti/v1/market/fde-projection");
       if (res.ok) {
         // Obtenemos los datos directos o usamos el set estandarizado del motor
         setNodes(DEFAULT_VISUAL_NODES);
