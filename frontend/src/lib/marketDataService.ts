@@ -535,7 +535,7 @@ export const CANONICAL_PROJECTIONS: MarketProjection[] = [
   },
 ];
 
-export async function getFdeProjectionFromSupabase(): Promise<FdeProjectionData> {
+export async function getFdeProjectionFromSupabase(isRefresh?: boolean): Promise<FdeProjectionData> {
   try {
     const { data, error } = await supabase
       .from('eti_fde_system_states')
@@ -544,7 +544,10 @@ export async function getFdeProjectionFromSupabase(): Promise<FdeProjectionData>
       .limit(1);
 
     if (error || !data || data.length === 0) {
-      return CANONICAL_FDE_PROJECTION;
+      return {
+        ...CANONICAL_FDE_PROJECTION,
+        asOf: new Date().toISOString(),
+      };
     }
 
     const state = data[0];
@@ -554,9 +557,13 @@ export async function getFdeProjectionFromSupabase(): Promise<FdeProjectionData>
 
     const confidence = Math.round(Number(state.system_coherence_index || 0.88) * 100);
 
+    const asOfTime = isRefresh 
+      ? new Date().toISOString() 
+      : (state.timestamp || new Date().toISOString());
+
     return {
       ...CANONICAL_FDE_PROJECTION,
-      asOf: state.timestamp || new Date().toISOString(),
+      asOf: asOfTime,
       financialSystemState: {
         code: state.macro_regime || 'DECELERATION',
         title: `Régimen FDE: ${state.macro_regime || 'DECELERATION'}`,
@@ -573,6 +580,9 @@ export async function getFdeProjectionFromSupabase(): Promise<FdeProjectionData>
     };
   } catch (err) {
     console.error('Error fetching FDE state from Supabase:', err);
-    return CANONICAL_FDE_PROJECTION;
+    return {
+      ...CANONICAL_FDE_PROJECTION,
+      asOf: new Date().toISOString(),
+    };
   }
 }

@@ -1,8 +1,8 @@
 {
   "success": true,
-  "generated_at": "2026-11-01T19:38:28.738468+00:00",
+  "generated_at": "2026-11-02T14:13:49.180354+00:00",
   "fss": {
-    "timestamp": "2026-11-01T19:38:28.738468+00:00",
+    "timestamp": "2026-11-02T14:13:49.179425+00:00",
     "macro_regime": "DECELERATION",
     "system_coherence_index": 0.88,
     "directional_bias": "BEARISH",
@@ -11,7 +11,7 @@
     "shock_intensity": 0.72,
     "recommended_strategy": "YOEL_CPI_VOLATILITY_BREAKDOWN_PUT",
     "aduana_gate_action": "ALLOW_PUTS_ONLY",
-    "summary_text": "Presión sostenida por tasas de interés (Treasury 10Y en 4.93% y VIX en 19.42). Costo de capital restrictivo castiga múltiplos de crecimiento y mega-caps tecnológicas. Sesgo bajista: monitorear rebotes débiles hacia VWAP para buscar continuaciones en PUT 0DTE.",
+    "summary_text": "Presión sostenida por tasas de interés (Treasury 10Y en 4.90% y VIX en 19.02). Costo de capital restrictivo castiga múltiplos de crecimiento y mega-caps tecnológicas. Sesgo bajista: monitorear rebotes débiles hacia VWAP para buscar continuaciones en PUT 0DTE.",
     "top_variables": [
       {
         "code": "CPI_SURPRISE",
@@ -22,13 +22,13 @@
       {
         "code": "YIELD_10Y",
         "name": "Treasury 10Y",
-        "value": "4.93%",
+        "value": "4.90%",
         "bias": "BEARISH"
       },
       {
         "code": "VIX",
         "name": "Índice VIX",
-        "value": "19.42",
+        "value": "19.02",
         "bias": "BEARISH"
       },
       {
@@ -182,9 +182,9 @@
       "unit": "PERCENT",
       "primary_source": "FRED",
       "ticker_or_series_id": "DGS10",
-      "current_value": 4.93,
+      "current_value": 4.9,
       "expected_value": 4.8,
-      "surprise_shock": 0.13,
+      "surprise_shock": 0.1,
       "regime_signal": "BEARISH"
     },
     {
@@ -228,7 +228,7 @@
       "surprise_shock": 333.198,
       "regime_signal": "BEARISH",
       "previous_value": 334.131,
-      "last_updated_at": "2026-11-01T19:38:24.822996+00:00"
+      "last_updated_at": "2026-11-02T14:13:44.970431+00:00"
     },
     {
       "node_code": "CPI_SURPRISE",
@@ -380,11 +380,11 @@
       "unit": "POINTS",
       "primary_source": "YFINANCE",
       "ticker_or_series_id": "^VIX",
-      "current_value": 19.42,
+      "current_value": 19.02,
       "expected_value": 15.5,
-      "surprise_shock": 3.92,
+      "surprise_shock": 3.52,
       "regime_signal": "BEARISH",
-      "previous_value": 17.2
+      "previous_value": 19.42
     },
     {
       "node_code": "CREDIT_SPREAD_HYG_LQD",
@@ -732,38 +732,5 @@
     "average_roi_percent": 30.0,
     "causal_accuracy_rate": 1.0,
     "aduana_alignment_verified": true
-  },
-  "system_state": {
-    "timestamp": "2026-11-01T23:01:13.432444+00:00",
-    "macro_regime": "DECELERATION",
-    "system_coherence_index": 0.96,
-    "directional_bias": "BEARISH",
-    "expected_spx_open_action": "PUT_MOMENTUM_BREAKDOWN",
-    "primary_driver_node": "GEOPOLITICAL_RISK",
-    "shock_intensity": 0.92,
-    "recommended_strategy": "YOEL_CPI_VOLATILITY_BREAKDOWN_PUT",
-    "aduana_gate_action": "ALLOW_PUTS_ONLY",
-    "summary_text": "CHOQUE EXÓGENO EN TIEMPO REAL VÍA TWS (GEOPOLITICAL_MILITARY): 'Breaking: Drone and missile strikes reported in Red Sea off Yemen coast, oil surges +4%...'. Impacto directo en Petróleo y primas de riesgo. Aduana O-13 activada en modo ALLOW_PUTS_ONLY para neutralizar riesgo direccional en CALLs.",
-    "top_variables": [
-      {
-        "code": "GEOPOLITICAL_RISK",
-        "name": "Riesgo Geopolítico / TWS",
-        "value": "CRITICAL SHOCK",
-        "bias": "BEARISH"
-      },
-      {
-        "code": "WTI_OIL",
-        "name": "Petróleo WTI (Shock)",
-        "value": "$174.50 (+4.5%)",
-        "bias": "BEARISH"
-      },
-      {
-        "code": "VIX",
-        "name": "Índice VIX",
-        "value": "22.80 (+17%)",
-        "bias": "BEARISH"
-      }
-    ],
-    "last_tws_news": "Breaking: Drone and missile strikes reported in Red Sea off Yemen coast, oil surges +4%"
   }
 }

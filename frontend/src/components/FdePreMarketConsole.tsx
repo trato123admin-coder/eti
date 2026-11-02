@@ -89,16 +89,25 @@ export default function FdePreMarketConsole({ initialData }: { initialData?: Fde
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'VARIABLES' | 'CAUSAL_CHAIN' | 'TIMELINE'>('VARIABLES');
   const [loading, setLoading] = useState(false);
+  const [justUpdated, setJustUpdated] = useState(false);
   const [secondsUntilNextRefresh, setSecondsUntilNextRefresh] = useState(300);
 
-  const fetchProjection = async () => {
+  const fetchProjection = async (isManual = false) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/eti/v1/market/fde-projection");
+      const url = isManual 
+        ? `/api/eti/v1/market/fde-projection?refresh=true&t=${Date.now()}`
+        : `/api/eti/v1/market/fde-projection?t=${Date.now()}`;
+      
+      const res = await fetch(url, { cache: "no-store" });
       if (res.ok) {
         const json = await res.json();
         setData(json);
         setSecondsUntilNextRefresh(json.refreshIntervalSeconds || 300);
+        if (isManual) {
+          setJustUpdated(true);
+          setTimeout(() => setJustUpdated(false), 2500);
+        }
       }
     } catch (err) {
       console.error("Error al refrescar FDE:", err);
@@ -187,12 +196,16 @@ export default function FdePreMarketConsole({ initialData }: { initialData?: Fde
         </div>
 
         <button
-          onClick={fetchProjection}
+          onClick={() => fetchProjection(true)}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition self-start sm:self-auto disabled:opacity-50"
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded border transition self-start sm:self-auto disabled:opacity-50 ${
+            justUpdated
+              ? "bg-emerald-950/80 border-emerald-600 text-emerald-300 font-semibold"
+              : "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700"
+          }`}
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-cyan-400" : ""}`} />
-          <span>{loading ? "Calculando..." : "Actualizar Ahora"}</span>
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-cyan-400" : justUpdated ? "text-emerald-400" : ""}`} />
+          <span>{loading ? "Sincronizando..." : justUpdated ? "✓ ¡Actualizado!" : "Actualizar Ahora"}</span>
         </button>
       </div>
 
