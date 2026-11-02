@@ -1,0 +1,186 @@
+{
+  "count": 5,
+  "projections": [
+    {
+      "symbol": "SPY",
+      "horizon": "INTRADAY",
+      "asOf": "2026-11-01T23:59:12.330Z",
+      "currentPrice": 574.85,
+      "scenarios": {
+        "bullish": {
+          "activationLevel": 576.2,
+          "invalidationLevel": 572.5,
+          "targetRange": [
+            577.5,
+            579
+          ],
+          "rationale": "Superación confirmada de VWAP + apertura con sesgo alcista y VIX bajo 17."
+        },
+        "sideways": {
+          "activationLevel": 573,
+          "invalidationLevel": 571,
+          "targetRange": [
+            572.5,
+            575.5
+          ],
+          "rationale": "Consolidación entre el POC de la sesión previa y la banda superior de Bollinger."
+        },
+        "bearish": {
+          "activationLevel": 571.8,
+          "invalidationLevel": 574.5,
+          "targetRange": [
+            568.5,
+            570
+          ],
+          "rationale": "Pérdida de EMA 20 intradía con rebote de volatilidad sobre 18."
+        }
+      },
+      "disclaimer": "Indicativa, no calibrada, no es una señal de operación. Sin probabilidades numéricas hasta calibración formal en scorecard."
+    },
+    {
+      "symbol": "QQQ",
+      "horizon": "INTRADAY",
+      "asOf": "2026-11-01T23:59:12.330Z",
+      "currentPrice": 492.3,
+      "scenarios": {
+        "bullish": {
+          "activationLevel": 494.5,
+          "invalidationLevel": 489.5,
+          "targetRange": [
+            496,
+            498.5
+          ],
+          "rationale": "Fuerte impulso en semiconductores (NVDA/SMCI) extendiendo el rally sobre VWAP."
+        },
+        "sideways": {
+          "activationLevel": 490.5,
+          "invalidationLevel": 488,
+          "targetRange": [
+            489,
+            493.5
+          ],
+          "rationale": "Rango estrecho previo a declaraciones macroeconómicas."
+        },
+        "bearish": {
+          "activationLevel": 488.5,
+          "invalidationLevel": 492,
+          "targetRange": [
+            484,
+            486.5
+          ],
+          "rationale": "Rotación fuera de megacaps tecnológicas hacia defensivas. Drenaje de liquidez neta en apertura."
+        }
+      },
+      "disclaimer": "Indicativa, no calibrada, no es una señal de operación."
+    },
+    {
+      "symbol": "META",
+      "horizon": "INTRADAY",
+      "asOf": "2026-11-01T23:59:12.330Z",
+      "currentPrice": 584.2,
+      "scenarios": {
+        "bullish": {
+          "activationLevel": 588.5,
+          "invalidationLevel": 581,
+          "targetRange": [
+            592,
+            596
+          ],
+          "rationale": "Superación agresiva de VWAP con inyección institucional de volumen en apertura."
+        },
+        "sideways": {
+          "activationLevel": 583,
+          "invalidationLevel": 579,
+          "targetRange": [
+            581.5,
+            586
+          ],
+          "rationale": "Absorción en rango estrecho entre niveles de soporte y resistencia previa."
+        },
+        "bearish": {
+          "activationLevel": 581.8,
+          "invalidationLevel": 586.5,
+          "targetRange": [
+            572,
+            575.5
+          ],
+          "rationale": "Playbook Yoel Sardiñas: Fallo en VWAP en los primeros 10 min + quiebre de pre-market low. Aceleración de Gamma en PUTs 0DTE."
+        }
+      },
+      "disclaimer": "Proyección causal alineada con el modelo Forrester Capa 4 (Tech Multiple Compression)."
+    },
+    {
+      "symbol": "NVDA",
+      "horizon": "INTRADAY",
+      "asOf": "2026-11-01T23:59:12.330Z",
+      "currentPrice": 141.5,
+      "scenarios": {
+        "bullish": {
+          "activationLevel": 143.2,
+          "invalidationLevel": 139.8,
+          "targetRange": [
+            145,
+            147.5
+          ],
+          "rationale": "Ruptura alcista sobre canal de compresión TTM Squeeze con momentum positivo."
+        },
+        "sideways": {
+          "activationLevel": 140.5,
+          "invalidationLevel": 138.5,
+          "targetRange": [
+            139.5,
+            142.5
+          ],
+          "rationale": "Consolidación dentro del rango de valor de apertura."
+        },
+        "bearish": {
+          "activationLevel": 139.2,
+          "invalidationLevel": 142.8,
+          "targetRange": [
+            134,
+            136.5
+          ],
+          "rationale": "Alta Beta (1.8x). Deslizamiento acelerado por venta de market makers al quebrar soporte."
+        }
+      },
+      "disclaimer": "Proyección causal de alta volatilidad para scalping direccional."
+    },
+    {
+      "symbol": "SPX",
+      "horizon": "INTRADAY",
+      "asOf": "2026-11-01T23:59:12.330Z",
+      "currentPrice": 5755,
+      "scenarios": {
+        "bullish": {
+          "activationLevel": 5770,
+          "invalidationLevel": 5735,
+          "targetRange": [
+            5790,
+            5810
+          ],
+          "rationale": "Régimen de expansión y absorción compradora sobre VWAP institucional."
+        },
+        "sideways": {
+          "activationLevel": 5740,
+          "invalidationLevel": 5720,
+          "targetRange": [
+            5730,
+            5765
+          ],
+          "rationale": "Muros de Gamma institucional contienen al índice (Viabilidad Iron Condor Opción Sigma)."
+        },
+        "bearish": {
+          "activationLevel": 5735,
+          "invalidationLevel": 5768,
+          "targetRange": [
+            5680,
+            5705
+          ],
+          "rationale": "Aduana O-13 Activada: Scalping 0DTE PUT por desaceleración macro y rendimiento 10Y en 4.93%."
+        }
+      },
+      "disclaimer": "Índice de liquidación en efectivo Sección 1256 IRS para operativa de apertura."
+    }
+  ],
+  "notice": "Proyección v1 por escenarios. Sin probabilidades numéricas hasta calibración."
+}

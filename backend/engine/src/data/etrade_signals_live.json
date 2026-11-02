@@ -1,0 +1,184 @@
+{
+  "updated_at": "2026-11-02T01:15:00.000Z",
+  "cadence": "PRE_MARKET",
+  "fde_regime": "DECELERATION",
+  "tws_broker_connected": true,
+  "tws_account": "DUR260933",
+  "signals_count": 3,
+  "signals": [
+    {
+      "signal_id": "eti-sig-20261102-meta-put-001",
+      "timestamp": "2026-11-02T01:15:00.000Z",
+      "expires_at": "2026-11-02T15:30:00.000Z",
+      "cadence": "PRE_MARKET",
+      "status": "ACTIVE",
+      "symbol": "META",
+      "asset_class": "OPTION_0DTE",
+      "action": "BUY_TO_OPEN",
+      "options_contract": {
+        "contract_symbol": "META261102P00590000",
+        "option_type": "PUT",
+        "strike": 590.0,
+        "expiration_date": "2026-11-02",
+        "dte": 0,
+        "target_delta": -0.42,
+        "max_bid_ask_spread_pct": 3.5,
+        "estimated_contract_price": 2.75
+      },
+      "strategy": {
+        "horizon": "INTRADAY",
+        "bias": "BEARISH",
+        "playbook_rule": "META_GAMMA_CASCADE_PUT_0DTE",
+        "expected_duration_minutes": 45
+      },
+      "causal_context": {
+        "fde_regime": "DECELERATION",
+        "fcg_confidence_pct": 91.5,
+        "primary_source": "Yoel Sardiñas (FCG Calibración #14)",
+        "catalyst_summary": "Rendimientos Bono 10Y en 4.93% + Titular APOLO sobre presión regulatoria antimonopolio.",
+        "catalyst_impact_score": -0.78,
+        "greeks_thesis": "Gamma extrema en strikes $590-$595. Si el precio pierde $592.50, market makers se ven obligados a vender acciones para delta-hedging."
+      },
+      "technical_gate": {
+        "trigger_type": "VWAP_REJECTION",
+        "underlying_trigger_price": 592.50,
+        "trigger_operator": "LESS_THAN_OR_EQUAL",
+        "indicator_requirements": {
+          "vwap_condition": "PRICE_BELOW_VWAP",
+          "ema_fast_vs_slow": "FAST_BELOW_SLOW",
+          "min_relative_volume": 1.35,
+          "timeframe_confirmation": "2m"
+        }
+      },
+      "risk_management": {
+        "invalidation_underlying": 596.20,
+        "stop_loss_contract_pct": -20.0,
+        "take_profit_1_pct": 40.0,
+        "take_profit_2_pct": 90.0,
+        "runner_trailing_stop_pct": 20.0,
+        "max_account_risk_pct": 2.5
+      },
+      "safety_guardrails": {
+        "execution_allowed": true,
+        "max_slippage_pct": 1.5,
+        "circuit_breaker_active": false
+      }
+    },
+    {
+      "signal_id": "eti-sig-20261102-spy-put-002",
+      "timestamp": "2026-11-02T01:15:00.000Z",
+      "expires_at": "2026-11-02T15:30:00.000Z",
+      "cadence": "PRE_MARKET",
+      "status": "ACTIVE",
+      "symbol": "SPY",
+      "asset_class": "OPTION_0DTE",
+      "action": "BUY_TO_OPEN",
+      "options_contract": {
+        "contract_symbol": "SPY261102P00572000",
+        "option_type": "PUT",
+        "strike": 572.0,
+        "expiration_date": "2026-11-02",
+        "dte": 0,
+        "target_delta": -0.38,
+        "max_bid_ask_spread_pct": 2.0,
+        "estimated_contract_price": 1.65
+      },
+      "strategy": {
+        "horizon": "SCALPING",
+        "bias": "BEARISH",
+        "playbook_rule": "SPY_ORB_BREAK_DOWN_PUT",
+        "expected_duration_minutes": 15
+      },
+      "causal_context": {
+        "fde_regime": "DECELERATION",
+        "fcg_confidence_pct": 88.0,
+        "primary_source": "Opción Sigma / Carter (Squeeze Down)",
+        "catalyst_summary": "VIX repunta sobre 19.42 con crudo WTI en alza ($168.83). Amplitud de mercado débil.",
+        "catalyst_impact_score": -0.65,
+        "greeks_thesis": "Expansión de IV favorece compras directas de volatilidad en las primeras 2 horas."
+      },
+      "technical_gate": {
+        "trigger_type": "ORB_BREAK",
+        "underlying_trigger_price": 571.80,
+        "trigger_operator": "LESS_THAN_OR_EQUAL",
+        "indicator_requirements": {
+          "vwap_condition": "PRICE_BELOW_VWAP",
+          "ema_fast_vs_slow": "FAST_BELOW_SLOW",
+          "min_relative_volume": 1.5,
+          "timeframe_confirmation": "5m"
+        }
+      },
+      "risk_management": {
+        "invalidation_underlying": 574.50,
+        "stop_loss_contract_pct": -18.0,
+        "take_profit_1_pct": 35.0,
+        "take_profit_2_pct": 75.0,
+        "runner_trailing_stop_pct": 15.0,
+        "max_account_risk_pct": 2.0
+      },
+      "safety_guardrails": {
+        "execution_allowed": true,
+        "max_slippage_pct": 1.2,
+        "circuit_breaker_active": false
+      }
+    },
+    {
+      "signal_id": "eti-sig-20261102-nvda-call-003",
+      "timestamp": "2026-11-02T01:15:00.000Z",
+      "expires_at": "2026-11-02T15:30:00.000Z",
+      "cadence": "PRE_MARKET",
+      "status": "ACTIVE",
+      "symbol": "NVDA",
+      "asset_class": "OPTION_0DTE",
+      "action": "BUY_TO_OPEN",
+      "options_contract": {
+        "contract_symbol": "NVDA261102C00140000",
+        "option_type": "CALL",
+        "strike": 140.0,
+        "expiration_date": "2026-11-02",
+        "dte": 0,
+        "target_delta": 0.45,
+        "max_bid_ask_spread_pct": 3.0,
+        "estimated_contract_price": 2.10
+      },
+      "strategy": {
+        "horizon": "SCALPING",
+        "bias": "BULLISH",
+        "playbook_rule": "NVDA_SUPPORT_BOUNCE_CALL",
+        "expected_duration_minutes": 20
+      },
+      "causal_context": {
+        "fde_regime": "DECELERATION",
+        "fcg_confidence_pct": 72.0,
+        "primary_source": "Carter Squeeze Momentum",
+        "catalyst_summary": "Demanda institucional sostenida en semiconductores a pesar del retroceso general.",
+        "catalyst_impact_score": 0.45,
+        "greeks_thesis": "Defensa de soporte en $136.50 con call open interest masivo en strike $140."
+      },
+      "technical_gate": {
+        "trigger_type": "PRICE_BREAKOUT",
+        "underlying_trigger_price": 139.20,
+        "trigger_operator": "GREATER_THAN_OR_EQUAL",
+        "indicator_requirements": {
+          "vwap_condition": "PRICE_ABOVE_VWAP",
+          "ema_fast_vs_slow": "FAST_ABOVE_SLOW",
+          "min_relative_volume": 1.25,
+          "timeframe_confirmation": "2m"
+        }
+      },
+      "risk_management": {
+        "invalidation_underlying": 136.50,
+        "stop_loss_contract_pct": -22.0,
+        "take_profit_1_pct": 40.0,
+        "take_profit_2_pct": 80.0,
+        "runner_trailing_stop_pct": 20.0,
+        "max_account_risk_pct": 1.5
+      },
+      "safety_guardrails": {
+        "execution_allowed": true,
+        "max_slippage_pct": 1.5,
+        "circuit_breaker_active": false
+      }
+    }
+  ]
+}

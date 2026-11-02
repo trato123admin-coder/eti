@@ -1,0 +1,134 @@
+{
+  "generated_at_utc": "2026-11-01T18:20:13.440866+00:00",
+  "generated_at_est": "2026-11-01 13:20:13 EST",
+  "news_analysis": {
+    "sentiment": "BEARISH_PRESSURE",
+    "hawkish_hits": 5,
+    "dovish_hits": 0,
+    "risk_off_hits": 2,
+    "hawkish_ratio": 1.0,
+    "catalysts_found": [
+      {
+        "headline": "Iran, Qatari mediators hold third day of talks to end US-Iran war - Reuters",
+        "source": "Reuters",
+        "time": "14:43 EST",
+        "tone": "HAWKISH / RISK-OFF"
+      },
+      {
+        "headline": "Qatar surges, bucking Gulf market slide on Iran war concerns - Reuters",
+        "source": "Reuters",
+        "time": "13:53 EST",
+        "tone": "HAWKISH / RISK-OFF"
+      },
+      {
+        "headline": "FSB says US warned Russia of possible Moscow attack - Reuters",
+        "source": "Reuters",
+        "time": "16:37 EST",
+        "tone": "HAWKISH / RISK-OFF"
+      },
+      {
+        "headline": "Egypt fears escalation in Iran war would be more destructive, foreign minister says - Reuters",
+        "source": "Reuters",
+        "time": "08:21 EST",
+        "tone": "HAWKISH / RISK-OFF"
+      },
+      {
+        "headline": "US approves $2.1 billion Patriot missile sale to Ukraine - Reuters",
+        "source": "Reuters",
+        "time": "19:23 EST",
+        "tone": "HAWKISH / RISK-OFF"
+      }
+    ]
+  },
+  "fss": {
+    "timestamp": "2026-11-01T18:20:18.514830+00:00",
+    "macro_regime": "EXPANSION",
+    "system_coherence_index": 0.75,
+    "directional_bias": "BULLISH",
+    "expected_spx_open_action": "CALL_MOMENTUM_BREAKOUT",
+    "primary_driver_node": "NET_LIQUIDITY",
+    "shock_intensity": 0.4,
+    "recommended_strategy": "CARTER_SPX_MOMENTUM_CALL",
+    "aduana_gate_action": "ALLOW_CALLS_ONLY",
+    "summary_text": "Liquidez positiva impulsando activos de riesgo. Sesgo alcista hacia activos de beta alto.",
+    "top_variables": [
+      {
+        "code": "CPI_SURPRISE",
+        "name": "Sorpresa Macro IPC",
+        "value": "+0.00%",
+        "bias": "BEARISH"
+      },
+      {
+        "code": "YIELD_10Y",
+        "name": "Treasury 10Y",
+        "value": "4.93%",
+        "bias": "BEARISH"
+      },
+      {
+        "code": "VIX",
+        "name": "Índice VIX",
+        "value": "19.42",
+        "bias": "BEARISH"
+      },
+      {
+        "code": "WTI_OIL",
+        "name": "Petróleo WTI (USO)",
+        "value": "$168.83",
+        "bias": "BEARISH"
+      },
+      {
+        "code": "GOLD_XAU",
+        "name": "Oro Spot (GLD)",
+        "value": "$355.78",
+        "bias": "BULLISH"
+      }
+    ],
+    "causal_transmission_chain": [
+      {
+        "step": 1,
+        "time": "08:30 EST",
+        "event": "Publicación CPI Shock (+0.30% sobre esperado)",
+        "layer": "Capa 2: Economía Real"
+      },
+      {
+        "step": 2,
+        "time": "08:35 EST",
+        "event": "Revalorización agresiva de Yields (10Y sube a 4.93%)",
+        "layer": "Capa 1: Monetaria"
+      },
+      {
+        "step": 3,
+        "time": "09:00 EST",
+        "event": "Transmisión a VIX (+3.9 pts) y descompresión de GEX a zona negativa",
+        "layer": "Capa 3: Transmisores"
+      },
+      {
+        "step": 4,
+        "time": "09:25 EST",
+        "event": "Evaluación ADUANA O-13: Autorizado comprar PUTs 0DTE de momentum",
+        "layer": "Aduana Robot"
+      },
+      {
+        "step": 5,
+        "time": "09:35 EST",
+        "event": "Ejecución óptima Yoel Sardiñas: Entrada en PUTs 0DTE tras rebote fallido",
+        "layer": "Capa 5: Micro-Ejecución"
+      }
+    ]
+  },
+  "robot_mandate": {
+    "evaluation_time_est": "13:20:13 EST",
+    "macro_regime": "EXPANSION",
+    "bias": "BULLISH",
+    "aduana_gate": "ALLOW_CALLS_ONLY",
+    "primary_playbook": "CARTER_SPX_MOMENTUM_CALL",
+    "coherence_index_pct": 75.0,
+    "allowed_underlying": [
+      "SPX",
+      "QQQ"
+    ],
+    "execution_allowed": false,
+    "opening_tactical_plan": "Monitorear primeros 5 minutos de apertura (9:30-9:35 AM). Si precio abre bajo VWAP y falla el primer rebote en resistencia, ejecutar señal de Yoel Sardiñas (PUT 0DTE ATM). En caso de rebote sólido sobre VWAP, la orden queda invalidada por Aduana O-13."
+  },
+  "is_ready_for_market_open": true
+}
