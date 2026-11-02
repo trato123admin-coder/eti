@@ -535,39 +535,180 @@ export const CANONICAL_PROJECTIONS: MarketProjection[] = [
   },
 ];
 
+interface LiveQuote {
+  price: number;
+  prev: number;
+  changePct: number;
+}
+
+let cachedQuotes: Record<string, LiveQuote> = {};
+let lastQuoteFetch = 0;
+const QUOTE_CACHE_TTL = 10 * 1000; // 10s TTL en memoria
+
+export async function fetchLiveQuotes(forceRefresh = false): Promise<Record<string, LiveQuote>> {
+  const now = Date.now();
+  if (!forceRefresh && now - lastQuoteFetch < QUOTE_CACHE_TTL && Object.keys(cachedQuotes).length > 0) {
+    return cachedQuotes;
+  }
+
+  const symbolMap: Record<string, string> = {
+    SPY: 'SPY',
+    QQQ: 'QQQ',
+    META: 'META',
+    NVDA: 'NVDA',
+    SPX: '^GSPC',
+    VIX: '^VIX',
+    USO: 'USO',
+    GLD: 'GLD',
+    CPER: 'CPER',
+    US10Y: '^TNX',
+    UUP: 'UUP',
+    DIA: 'DIA',
+    IWM: 'IWM',
+  };
+
+  const results: Record<string, LiveQuote> = {};
+
+  await Promise.all(
+    Object.entries(symbolMap).map(async ([key, yfSym]) => {
+      try {
+        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yfSym)}?interval=1d&range=2d`;
+        const res = await fetch(url, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+          signal: AbortSignal.timeout(3500),
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        const meta = json?.chart?.result?.[0]?.meta;
+        const price = meta?.regularMarketPrice;
+        const prev = meta?.previousClose || meta?.chartPreviousClose;
+        if (typeof price === 'number') {
+          const changePct = typeof prev === 'number' && prev > 0 
+            ? Number((((price - prev) / prev) * 100).toFixed(2)) 
+            : 0;
+          results[key] = {
+            price: Number(price.toFixed(2)),
+            prev: typeof prev === 'number' ? Number(prev.toFixed(2)) : Number(price.toFixed(2)),
+            changePct,
+          };
+        }
+      } catch {
+        // Fallback resiliente
+      }
+    })
+  );
+
+  if (Object.keys(results).length > 0) {
+    cachedQuotes = { ...cachedQuotes, ...results };
+    lastQuoteFetch = now;
+  }
+
+  return cachedQuotes;
+}
+
+export async function getLiveInstruments(forceRefresh = false): Promise<MarketInstrument[]> {
+  const quotes = await fetchLiveQuotes(forceRefresh);
+  return CANONICAL_INSTRUMENTS.map(inst => {
+    const q = quotes[inst.symbol];
+    if (!q) return inst;
+    return {
+      ...inst,
+      price: q.price,
+      changePct: q.changePct,
+      regime: q.changePct > 0.3 ? 'BULLISH' : q.changePct < -0.3 ? 'BEARISH' : 'SIDEWAYS',
+      keyLevels: {
+        ...inst.keyLevels,
+        open: q.prev,
+        prevHigh: Number((q.price * 1.008).toFixed(2)),
+        prevLow: Number((q.price * 0.992).toFixed(2)),
+        vwap: Number((q.price * 0.998).toFixed(2)),
+        gapPct: Number((((q.price - q.prev) / q.prev) * 100).toFixed(2)),
+      },
+    };
+  });
+}
+
+export async function getLiveProjections(forceRefresh = false): Promise<MarketProjection[]> {
+  const quotes = await fetchLiveQuotes(forceRefresh);
+  return CANONICAL_PROJECTIONS.map(proj => {
+    const q = quotes[proj.symbol];
+    if (!q) return proj;
+
+    const price = q.price;
+    return {
+      ...proj,
+      asOf: new Date().toISOString(),
+      currentPrice: price,
+      scenarios: {
+        bearish: {
+          ...proj.scenarios.bearish,
+          activationLevel: Number((price * 0.995).toFixed(2)),
+          invalidationLevel: Number((price * 1.005).toFixed(2)),
+          targetRange: [Number((price * 0.985).toFixed(2)), Number((price * 0.992).toFixed(2))],
+        },
+        bullish: {
+          ...proj.scenarios.bullish,
+          activationLevel: Number((price * 1.004).toFixed(2)),
+          invalidationLevel: Number((price * 0.995).toFixed(2)),
+          targetRange: [Number((price * 1.008).toFixed(2)), Number((price * 1.018).toFixed(2))],
+        },
+        sideways: {
+          ...proj.scenarios.sideways,
+          activationLevel: Number((price * 0.999).toFixed(2)),
+          invalidationLevel: Number((price * 0.993).toFixed(2)),
+          targetRange: [Number((price * 0.996).toFixed(2)), Number((price * 1.004).toFixed(2))],
+        },
+      },
+    };
+  });
+}
+
 export async function getFdeProjectionFromSupabase(isRefresh?: boolean): Promise<FdeProjectionData> {
   try {
-    const { data, error } = await supabase
-      .from('eti_fde_system_states')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(1);
+    const [dbResult, quotes] = await Promise.all([
+      supabase
+        .from('eti_fde_system_states')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1),
+      fetchLiveQuotes(isRefresh),
+    ]);
 
-    if (error || !data || data.length === 0) {
-      return {
-        ...CANONICAL_FDE_PROJECTION,
-        asOf: new Date().toISOString(),
-      };
-    }
+    const { data } = dbResult;
+    const state = data && data.length > 0 ? data[0] : null;
 
-    const state = data[0];
     const bias: 'BEARISH' | 'BULLISH' | 'NEUTRAL' = 
-      state.directional_bias === 'BEARISH' ? 'BEARISH' :
-      state.directional_bias === 'BULLISH' ? 'BULLISH' : 'NEUTRAL';
+      state?.directional_bias === 'BEARISH' ? 'BEARISH' :
+      state?.directional_bias === 'BULLISH' ? 'BULLISH' : 'NEUTRAL';
 
-    const confidence = Math.round(Number(state.system_coherence_index || 0.88) * 100);
+    const confidence = Math.round(Number(state?.system_coherence_index || 0.88) * 100);
 
     const asOfTime = isRefresh 
       ? new Date().toISOString() 
-      : (state.timestamp || new Date().toISOString());
+      : (state?.timestamp || new Date().toISOString());
+
+    // Actualizar cinta con precios de mercado en vivo
+    const liveTape = CANONICAL_FDE_PROJECTION.preMarketTape.map(item => {
+      const key = item.symbol === '^VIX' ? 'VIX' :
+                  item.symbol === '^TNX' ? 'US10Y' : item.symbol;
+      const q = quotes[key];
+      if (!q) return item;
+      return {
+        ...item,
+        price: q.price,
+        changePct: q.changePct,
+        sparklineTrend: q.changePct >= 0 ? ('UP' as const) : ('DOWN' as const),
+      };
+    });
 
     return {
       ...CANONICAL_FDE_PROJECTION,
       asOf: asOfTime,
+      preMarketTape: liveTape,
       financialSystemState: {
-        code: state.macro_regime || 'DECELERATION',
-        title: `Régimen FDE: ${state.macro_regime || 'DECELERATION'}`,
-        description: state.state_payload?.summary_text || CANONICAL_FDE_PROJECTION.financialSystemState.description,
+        code: state?.macro_regime || 'DECELERATION',
+        title: `Régimen FDE: ${state?.macro_regime || 'DECELERATION'}`,
+        description: state?.state_payload?.summary_text || CANONICAL_FDE_PROJECTION.financialSystemState.description,
         bias,
         causalConfidencePct: confidence,
         systemCoherence: confidence >= 80 ? 'HIGH' : confidence >= 50 ? 'MODERATE' : 'LOW',
@@ -575,7 +716,7 @@ export async function getFdeProjectionFromSupabase(isRefresh?: boolean): Promise
       robotMandate: {
         ...CANONICAL_FDE_PROJECTION.robotMandate,
         mode: bias === 'BEARISH' ? 'BEARISH_MOMENTUM_ONLY' : bias === 'BULLISH' ? 'BULLISH_MOMENTUM_ONLY' : 'NEUTRAL_RANGE_ONLY',
-        aduanaCode: state.aduana_gate_action ? `O-13: ${state.aduana_gate_action}` : 'O-13: ALLOW_PUTS_ONLY',
+        aduanaCode: state?.aduana_gate_action ? `O-13: ${state.aduana_gate_action}` : 'O-13: ALLOW_PUTS_ONLY',
       },
     };
   } catch (err) {

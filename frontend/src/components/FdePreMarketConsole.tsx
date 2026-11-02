@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { CANONICAL_FDE_PROJECTION } from "@/lib/marketDataService";
 import {
   Compass,
@@ -85,6 +86,7 @@ interface FdeProjectionData {
 }
 
 export default function FdePreMarketConsole({ initialData }: { initialData?: FdeProjectionData }) {
+  const router = useRouter();
   const [data, setData] = useState<FdeProjectionData>(initialData || CANONICAL_FDE_PROJECTION);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'VARIABLES' | 'CAUSAL_CHAIN' | 'TIMELINE'>('VARIABLES');
@@ -106,6 +108,7 @@ export default function FdePreMarketConsole({ initialData }: { initialData?: Fde
         setSecondsUntilNextRefresh(json.refreshIntervalSeconds || 300);
         if (isManual) {
           setJustUpdated(true);
+          router.refresh();
           setTimeout(() => setJustUpdated(false), 2500);
         }
       }

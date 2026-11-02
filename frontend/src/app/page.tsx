@@ -5,48 +5,88 @@ import {
 } from "lucide-react";
 import FdePreMarketConsole from "@/components/FdePreMarketConsole";
 import {
-  CANONICAL_INSTRUMENTS,
+  getLiveInstruments,
   CANONICAL_BREADTH,
   CANONICAL_MOVERS,
   CANONICAL_HEATMAP,
-  CANONICAL_PROJECTIONS,
+  getLiveProjections,
   getFdeProjectionFromSupabase
 } from "@/lib/marketDataService";
 
-// Fetch live market data (with direct Supabase / Canonical fallback for cloud serverless deployments)
+// Fetch live market data (with direct Yahoo Finance & Supabase quotes for cloud serverless deployments)
 async function getMarketData() {
-  const engineUrl = process.env.NEXT_PUBLIC_ENGINE_URL;
-  let instruments = CANONICAL_INSTRUMENTS;
-  let breadth = CANONICAL_BREADTH;
-  let movers = CANONICAL_MOVERS;
-  let heatmap = CANONICAL_HEATMAP;
-  let projections = CANONICAL_PROJECTIONS;
-  let fdeProjection = await getFdeProjectionFromSupabase();
-
-  if (engineUrl && !engineUrl.includes("localhost")) {
-    try {
-      const [instRes, breadthRes, moversRes, heatmapRes, projRes, fdeRes] = await Promise.all([
-        fetch(`${engineUrl}/api/eti/v1/market/instruments`, { cache: "no-store" }).catch(() => null),
-        fetch(`${engineUrl}/api/eti/v1/market/breadth`, { cache: "no-store" }).catch(() => null),
-        fetch(`${engineUrl}/api/eti/v1/market/movers`, { cache: "no-store" }).catch(() => null),
-        fetch(`${engineUrl}/api/eti/v1/market/heatmap`, { cache: "no-store" }).catch(() => null),
-        fetch(`${engineUrl}/api/eti/v1/market/projections`, { cache: "no-store" }).catch(() => null),
-        fetch(`${engineUrl}/api/eti/v1/market/fde-projection`, { cache: "no-store" }).catch(() => null)
-      ]);
-
-      if (instRes && instRes.ok) instruments = (await instRes.json()).instruments || instruments;
-      if (breadthRes && breadthRes.ok) breadth = await breadthRes.json();
-      if (moversRes && moversRes.ok) movers = (await moversRes.json()).movers || movers;
-      if (heatmapRes && heatmapRes.ok) heatmap = (await heatmapRes.json()).sectors || heatmap;
-      if (projRes && projRes.ok) projections = (await projRes.json()).projections || projections;
-      if (fdeRes && fdeRes.ok) fdeProjection = await fdeRes.json();
-    } catch {
-      // Fallback ya configurado
-    }
-  }
+  const [instruments, projections, fdeProjection] = await Promise.all([
+    getLiveInstruments(),
+    getLiveProjections(),
+    getFdeProjectionFromSupabase(),
+  ]);
+  const breadth = CANONICAL_BREADTH;
+  const movers = CANONICAL_MOVERS;
+  const heatmap = CANONICAL_HEATMAP;
 
   return { instruments, breadth, movers, heatmap, projections, fdeProjection };
 }
+
+const PROJECTION_META_MAP: Record<string, { tag: string; tagBg: string; tagColor: string; tagBorder?: string; activeScenario: string; setupNotes: string; state: string; stateBg: string; stateColor: string; stateBorder: string }> = {
+  META: {
+    tag: "Beta 1.48",
+    tagBg: "bg-indigo-950",
+    tagColor: "text-indigo-300",
+    tagBorder: "border-indigo-800",
+    activeScenario: "▼ BEARISH (PUT 0DTE)",
+    setupNotes: "Playbook Yoel Sardiñas: Rechazo en VWAP + quiebre pre-market. Aceleración Gamma.",
+    state: "ARMADO",
+    stateBg: "bg-emerald-950",
+    stateColor: "text-emerald-300",
+    stateBorder: "border-emerald-800",
+  },
+  NVDA: {
+    tag: "Beta 1.82",
+    tagBg: "bg-indigo-950",
+    tagColor: "text-indigo-300",
+    tagBorder: "border-indigo-800",
+    activeScenario: "▼ BEARISH (PUT Scalp)",
+    setupNotes: "Alta Beta. Venta forzada de creadores de mercado al quebrar soporte matutino.",
+    state: "ARMADO",
+    stateBg: "bg-emerald-950",
+    stateColor: "text-emerald-300",
+    stateBorder: "border-emerald-800",
+  },
+  SPX: {
+    tag: "Sec. 1256",
+    tagBg: "bg-amber-950",
+    tagColor: "text-amber-300",
+    tagBorder: "border-amber-800",
+    activeScenario: "▼ BEARISH (0DTE PUT)",
+    setupNotes: "Aduana O-13 Activada: Choque de tasas drena compras institucionales.",
+    state: "ARMADO",
+    stateBg: "bg-emerald-950",
+    stateColor: "text-emerald-300",
+    stateBorder: "border-emerald-800",
+  },
+  SPY: {
+    tag: "ETF S&P",
+    tagBg: "bg-slate-800",
+    tagColor: "text-slate-400",
+    activeScenario: "▼ BEARISH (EMA Loss)",
+    setupNotes: "Pérdida de EMA 20 intradía con rebote de volatilidad VIX sobre 18.",
+    state: "STANDBY",
+    stateBg: "bg-amber-950",
+    stateColor: "text-amber-300",
+    stateBorder: "border-amber-800",
+  },
+  QQQ: {
+    tag: "Nasdaq 100",
+    tagBg: "bg-slate-800",
+    tagColor: "text-slate-400",
+    activeScenario: "▼ BEARISH (Rotación)",
+    setupNotes: "Rotación defensiva fuera de megacaps tecnológicas ante drenaje de liquidez neta.",
+    state: "STANDBY",
+    stateBg: "bg-amber-950",
+    stateColor: "text-amber-300",
+    stateBorder: "border-amber-800",
+  },
+};
 
 export default async function MercadoAhoraPage() {
   const { instruments, breadth, movers, heatmap, projections, fdeProjection } = await getMarketData();
@@ -213,121 +253,56 @@ export default async function MercadoAhoraPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/70 text-slate-300">
-              <tr className="hover:bg-slate-900/50 transition bg-rose-950/10">
-                <td className="py-3 px-4 font-bold text-white flex items-center gap-1.5">
-                  <span className="text-cyan-400">META</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-950 text-indigo-300 border border-indigo-800">Beta 1.48</span>
-                </td>
-                <td className="py-3 px-3 font-semibold">$584.20</td>
-                <td className="py-3 px-3">
-                  <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800/70 text-[10px] font-bold">
-                    ▼ BEARISH (PUT 0DTE)
-                  </span>
-                </td>
-                <td className="py-3 px-3 text-rose-400 font-bold">$581.80 (VWAP Fallo)</td>
-                <td className="py-3 px-3 text-slate-400">$586.50</td>
-                <td className="py-3 px-3 text-emerald-400 font-bold">$572.00 - $575.50</td>
-                <td className="py-3 px-4 text-slate-300 text-[11px] max-w-xs truncate">
-                  Playbook Yoel Sardiñas: Rechazo en VWAP + quiebre pre-market. Aceleración Gamma.
-                </td>
-                <td className="py-3 px-3 text-center">
-                  <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-bold">
-                    ARMADO
-                  </span>
-                </td>
-              </tr>
-              <tr className="hover:bg-slate-900/50 transition bg-rose-950/10">
-                <td className="py-3 px-4 font-bold text-white flex items-center gap-1.5">
-                  <span className="text-cyan-400">NVDA</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-950 text-indigo-300 border border-indigo-800">Beta 1.82</span>
-                </td>
-                <td className="py-3 px-3 font-semibold">$141.50</td>
-                <td className="py-3 px-3">
-                  <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800/70 text-[10px] font-bold">
-                    ▼ BEARISH (PUT Scalp)
-                  </span>
-                </td>
-                <td className="py-3 px-3 text-rose-400 font-bold">$139.20 (Canal)</td>
-                <td className="py-3 px-3 text-slate-400">$142.80</td>
-                <td className="py-3 px-3 text-emerald-400 font-bold">$134.00 - $136.50</td>
-                <td className="py-3 px-4 text-slate-300 text-[11px] max-w-xs truncate">
-                  Alta Beta. Venta forzada de creadores de mercado al quebrar soporte matutino.
-                </td>
-                <td className="py-3 px-3 text-center">
-                  <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-bold">
-                    ARMADO
-                  </span>
-                </td>
-              </tr>
-              <tr className="hover:bg-slate-900/50 transition bg-rose-950/10">
-                <td className="py-3 px-4 font-bold text-white flex items-center gap-1.5">
-                  <span className="text-cyan-400">SPX</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-800">Sec. 1256</span>
-                </td>
-                <td className="py-3 px-3 font-semibold">$5,755.00</td>
-                <td className="py-3 px-3">
-                  <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800/70 text-[10px] font-bold">
-                    ▼ BEARISH (0DTE PUT)
-                  </span>
-                </td>
-                <td className="py-3 px-3 text-rose-400 font-bold">$5,735.00</td>
-                <td className="py-3 px-3 text-slate-400">$5,768.00</td>
-                <td className="py-3 px-3 text-emerald-400 font-bold">$5,680.00 - $5,705.00</td>
-                <td className="py-3 px-4 text-slate-300 text-[11px] max-w-xs truncate">
-                  Aduana O-13 Activada: Choque de tasas (10Y en 4.93%) drena compras institucionales.
-                </td>
-                <td className="py-3 px-3 text-center">
-                  <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-bold">
-                    ARMADO
-                  </span>
-                </td>
-              </tr>
-              <tr className="hover:bg-slate-900/50 transition">
-                <td className="py-3 px-4 font-bold text-white flex items-center gap-1.5">
-                  <span className="text-cyan-400">SPY</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">ETF S&P</span>
-                </td>
-                <td className="py-3 px-3 font-semibold">$574.85</td>
-                <td className="py-3 px-3">
-                  <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800/70 text-[10px] font-bold">
-                    ▼ BEARISH (EMA Loss)
-                  </span>
-                </td>
-                <td className="py-3 px-3 text-rose-400 font-bold">$571.80</td>
-                <td className="py-3 px-3 text-slate-400">$574.50</td>
-                <td className="py-3 px-3 text-emerald-400 font-bold">$568.50 - $570.00</td>
-                <td className="py-3 px-4 text-slate-300 text-[11px] max-w-xs truncate">
-                  Pérdida de EMA 20 intradía con rebote de volatilidad VIX sobre 18.
-                </td>
-                <td className="py-3 px-3 text-center">
-                  <span className="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 text-[10px] font-bold">
-                    STANDBY
-                  </span>
-                </td>
-              </tr>
-              <tr className="hover:bg-slate-900/50 transition">
-                <td className="py-3 px-4 font-bold text-white flex items-center gap-1.5">
-                  <span className="text-cyan-400">QQQ</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">Nasdaq 100</span>
-                </td>
-                <td className="py-3 px-3 font-semibold">$492.30</td>
-                <td className="py-3 px-3">
-                  <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800/70 text-[10px] font-bold">
-                    ▼ BEARISH (Rotación)
-                  </span>
-                </td>
-                <td className="py-3 px-3 text-rose-400 font-bold">$488.50</td>
-                <td className="py-3 px-3 text-slate-400">$492.00</td>
-                <td className="py-3 px-3 text-emerald-400 font-bold">$484.00 - $486.50</td>
-                <td className="py-3 px-4 text-slate-300 text-[11px] max-w-xs truncate">
-                  Rotación defensiva fuera de megacaps tecnológicas ante drenaje de liquidez neta.
-                </td>
-                <td className="py-3 px-3 text-center">
-                  <span className="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 text-[10px] font-bold">
-                    STANDBY
-                  </span>
-                </td>
-              </tr>
+              {projections.map((proj: any) => {
+                const meta = PROJECTION_META_MAP[proj.symbol] || {
+                  tag: "ACTIVO",
+                  tagBg: "bg-slate-800",
+                  tagColor: "text-slate-400",
+                  activeScenario: "▼ BEARISH (Intradía)",
+                  setupNotes: proj.scenarios.bearish.rationale,
+                  state: "ARMADO",
+                  stateBg: "bg-emerald-950",
+                  stateColor: "text-emerald-300",
+                  stateBorder: "border-emerald-800",
+                };
+                const isArmado = meta.state === "ARMADO";
+
+                return (
+                  <tr key={proj.symbol} className={`hover:bg-slate-900/50 transition ${isArmado ? "bg-rose-950/10" : ""}`}>
+                    <td className="py-3 px-4 font-bold text-white flex items-center gap-1.5">
+                      <span className="text-cyan-400">{proj.symbol}</span>
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded ${meta.tagBg} ${meta.tagColor} ${meta.tagBorder ? `border ${meta.tagBorder}` : ""}`}>
+                        {meta.tag}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 font-semibold text-white">
+                      ${proj.currentPrice.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800/70 text-[10px] font-bold">
+                        {meta.activeScenario}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-rose-400 font-bold">
+                      ${proj.scenarios.bearish.activationLevel.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 px-3 text-slate-400">
+                      ${proj.scenarios.bearish.invalidationLevel.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 px-3 text-emerald-400 font-bold">
+                      ${proj.scenarios.bearish.targetRange[0].toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} - ${proj.scenarios.bearish.targetRange[1].toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 px-4 text-slate-300 text-[11px] max-w-xs truncate" title={proj.scenarios.bearish.rationale}>
+                      {proj.scenarios.bearish.rationale}
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      <span className={`px-2 py-0.5 rounded ${meta.stateBg} ${meta.stateColor} border ${meta.stateBorder} text-[10px] font-bold`}>
+                        {meta.state}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
