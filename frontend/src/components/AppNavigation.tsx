@@ -11,6 +11,7 @@ import {
   PlusCircle,
   CheckSquare,
   Database,
+  Calendar,
   Shield,
   Activity,
   Radio
@@ -153,10 +154,27 @@ export default function AppNavigation() {
 
             <Link
               href="/ledger"
-              className="text-slate-400 hover:text-purple-400 px-1.5 py-0.5 rounded hover:bg-slate-800/60 transition flex items-center gap-1"
+              className={`px-1.5 py-0.5 rounded transition flex items-center gap-1 ${
+                isCurrent("/ledger")
+                  ? "text-purple-300 bg-purple-950/60 border border-purple-800/60 font-semibold"
+                  : "text-slate-400 hover:text-purple-400 hover:bg-slate-800/60"
+              }`}
             >
               <Database className="w-3 h-3 text-purple-400" />
               <span>Ledger</span>
+            </Link>
+
+            <Link
+              href="/calendar"
+              className={`px-1.5 py-0.5 rounded transition flex items-center gap-1 ${
+                isCurrent("/calendar")
+                  ? "text-amber-300 bg-amber-950/60 border border-amber-800/60 font-semibold"
+                  : "text-slate-400 hover:text-amber-400 hover:bg-slate-800/60"
+              }`}
+              title="Calendario Económico del Mercado Americano & Efecto Causal FDE/FCG"
+            >
+              <Calendar className="w-3 h-3 text-amber-400" />
+              <span>Calendario</span>
             </Link>
 
             <div className="flex items-center space-x-1 bg-emerald-950/70 border border-emerald-800/60 px-2 py-0.5 rounded text-emerald-400 font-mono text-[10px]">
