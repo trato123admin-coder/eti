@@ -54,6 +54,7 @@ export interface SectorPerformance {
 
 export interface FdeProjectionData {
   asOf: string;
+  macroRegimeTimestamp?: string;
   refreshIntervalSeconds: number;
   isPreMarketOpenWindow: boolean;
   financialSystemState: {
@@ -683,9 +684,9 @@ export async function getFdeProjectionFromSupabase(isRefresh?: boolean): Promise
 
     const confidence = Math.round(Number(state?.system_coherence_index || 0.88) * 100);
 
-    const asOfTime = isRefresh 
-      ? new Date().toISOString() 
-      : (state?.timestamp || new Date().toISOString());
+    // asOf siempre refleja el momento de sincronización de datos y cálculo de mercado en vivo
+    const asOfTime = new Date().toISOString();
+    const macroRegimeTimestamp = state?.timestamp || asOfTime;
 
     // Actualizar cinta con precios de mercado en vivo
     const liveTape = CANONICAL_FDE_PROJECTION.preMarketTape.map(item => {
@@ -704,6 +705,7 @@ export async function getFdeProjectionFromSupabase(isRefresh?: boolean): Promise
     return {
       ...CANONICAL_FDE_PROJECTION,
       asOf: asOfTime,
+      macroRegimeTimestamp,
       preMarketTape: liveTape,
       financialSystemState: {
         code: state?.macro_regime || 'DECELERATION',

@@ -59,6 +59,7 @@ interface SessionTimelineItem {
 
 interface FdeProjectionData {
   asOf: string;
+  macroRegimeTimestamp?: string;
   refreshIntervalSeconds: number;
   isPreMarketOpenWindow: boolean;
   financialSystemState: {
@@ -243,8 +244,15 @@ export default function FdePreMarketConsole({ initialData }: { initialData?: Fde
       <div className="bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-indigo-950/80 text-indigo-400 border border-indigo-800/60">
-              <Compass className="w-3.5 h-3.5 text-indigo-400" /> FINANCIAL DYNAMICS ENGINE • FCG CAUSAL RADAR
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-indigo-950/80 text-indigo-400 border border-indigo-800/60">
+                <Compass className="w-3.5 h-3.5 text-indigo-400" /> FINANCIAL DYNAMICS ENGINE • FCG CAUSAL RADAR
+              </div>
+              {data.macroRegimeTimestamp && (
+                <span className="text-[11px] font-mono text-slate-400 bg-slate-950/60 px-2 py-0.5 rounded border border-slate-800">
+                  Modelo Causal: {formatLastUpdated(data.macroRegimeTimestamp)}
+                </span>
+              )}
             </div>
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
               Proyección Causal del Día:{" "}
