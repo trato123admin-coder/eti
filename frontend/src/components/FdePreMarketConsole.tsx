@@ -94,6 +94,27 @@ export default function FdePreMarketConsole({ initialData }: { initialData?: Fde
   const [loading, setLoading] = useState(false);
   const [justUpdated, setJustUpdated] = useState(false);
   const [secondsUntilNextRefresh, setSecondsUntilNextRefresh] = useState(300);
+  const [dispatching, setDispatching] = useState(false);
+  const [dispatchResult, setDispatchResult] = useState<string | null>(null);
+
+  const handleDispatchToEtrade = async () => {
+    setDispatching(true);
+    setDispatchResult(null);
+    try {
+      const res = await fetch("/api/eti/v1/etrade/signals/dispatch", { method: "POST" });
+      const resData = await res.json();
+      if (resData.successful > 0) {
+        setDispatchResult(`✓ ${resData.successful}/${resData.total_signals} enviadas a eTrade (${resData.total_time_ms}ms)`);
+      } else {
+        setDispatchResult(`⚠️ eTrade en espera (${resData.items?.[0]?.error || 'Puerto 8000 desconectado'})`);
+      }
+    } catch (err: any) {
+      setDispatchResult(`Error: ${err.message}`);
+    } finally {
+      setDispatching(false);
+      setTimeout(() => setDispatchResult(null), 6000);
+    }
+  };
 
   const fetchProjection = async (isManual = false) => {
     setLoading(true);
@@ -199,18 +220,34 @@ export default function FdePreMarketConsole({ initialData }: { initialData?: Fde
           </span>
         </div>
 
-        <button
-          onClick={() => fetchProjection(true)}
-          disabled={loading}
-          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded border transition self-start sm:self-auto disabled:opacity-50 ${
-            justUpdated
-              ? "bg-emerald-950/80 border-emerald-600 text-emerald-300 font-semibold"
-              : "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700"
-          }`}
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-cyan-400" : justUpdated ? "text-emerald-400" : ""}`} />
-          <span>{loading ? "Sincronizando..." : justUpdated ? "✓ ¡Actualizado!" : "Actualizar Ahora"}</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          {dispatchResult && (
+            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-indigo-950 border border-indigo-700 text-indigo-300 animate-pulse">
+              {dispatchResult}
+            </span>
+          )}
+          <button
+            onClick={handleDispatchToEtrade}
+            disabled={dispatching}
+            title="Envía las señales 0DTE (META, NVDA, SPY, QQQ, SPX) directamente al Webhook de eTrade en puerto 8000"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded border transition text-xs font-mono bg-cyan-950/80 hover:bg-cyan-900 border-cyan-700 text-cyan-300 disabled:opacity-50"
+          >
+            <Zap className={`w-3.5 h-3.5 ${dispatching ? "animate-spin text-amber-400" : "text-cyan-400"}`} />
+            <span>{dispatching ? "Despachando..." : "Despachar a eTrade (0DTE)"}</span>
+          </button>
+          <button
+            onClick={() => fetchProjection(true)}
+            disabled={loading}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded border transition disabled:opacity-50 ${
+              justUpdated
+                ? "bg-emerald-950/80 border-emerald-600 text-emerald-300 font-semibold"
+                : "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700"
+            }`}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-cyan-400" : justUpdated ? "text-emerald-400" : ""}`} />
+            <span>{loading ? "Sincronizando..." : justUpdated ? "✓ ¡Actualizado!" : "Actualizar Ahora"}</span>
+          </button>
+        </div>
       </div>
 
       {/* 2. Cinta Pre-Apertura (Ticker Tape: Índices, Commodities, Tasas) */}

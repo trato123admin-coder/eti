@@ -173,6 +173,15 @@ class PreMarketScheduler:
         except Exception as e:
             print(f"[WARN] Error guardando briefing: {e}")
 
+        # 5. Despacho Push Webhook Cero Latencia hacia eTrade (9:25 AM EST)
+        etrade_webhook = os.getenv("ETRADE_WEBHOOK_URL", "http://localhost:8000/api/v1/options/eti/signals")
+        eti_dispatch_url = os.getenv("ETI_LOCAL_URL", "http://localhost:3000") + "/api/eti/v1/etrade/signals/dispatch"
+        try:
+            r = requests.post(eti_dispatch_url, json={"targetUrl": etrade_webhook}, timeout=5)
+            print(f"\n[FASE 5 - 9:25 EST] Despacho Webhook eTrade ejecutado: HTTP {r.status_code}")
+        except Exception as e_push:
+            print(f"\n[FASE 5 - 9:25 EST] Aviso despacho Webhook eTrade: {e_push} (eTrade en espera en puerto 8000)")
+
         print("\n==========================================================================")
         print("RUTINA PRE-MARKET COMPLETADA CON ÉXITO | ROBOT EN ESPERA DE APERTURA 9:30 AM")
         print("==========================================================================\n")
