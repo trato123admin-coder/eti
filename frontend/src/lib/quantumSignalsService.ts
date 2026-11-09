@@ -97,7 +97,8 @@ async function buildFreshSignals(): Promise<ETISignalPayload[]> {
     ? (fdeRegimeRaw as 'DECELERATION' | 'EXPANSION' | 'STAGFLATION' | 'RECOVERY')
     : 'DECELERATION';
 
-  const isBearish = fdeData.financialSystemState.bias === 'BEARISH';
+  const aduanaGate = fdeData.robotMandate?.aduanaCode || '';
+  const isBearish = fdeData.financialSystemState.bias === 'BEARISH' || aduanaGate.includes('PUT');
   const optType: 'CALL' | 'PUT' = isBearish ? 'PUT' : 'CALL';
 
   const assetsConfig = [

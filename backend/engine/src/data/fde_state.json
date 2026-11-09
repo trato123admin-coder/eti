@@ -1,8 +1,8 @@
 {
   "success": true,
-  "generated_at": "2026-11-08T22:45:56.321010+00:00",
+  "generated_at": "2026-11-09T03:14:43.065100+00:00",
   "fss": {
-    "timestamp": "2026-11-08T22:45:56.321010+00:00",
+    "timestamp": "2026-11-09T03:14:43.065100+00:00",
     "macro_regime": "LIQUIDITY_SHOCK",
     "system_coherence_index": 0.89,
     "directional_bias": "CHOPPY_VOLATILE",
@@ -228,7 +228,7 @@
       "surprise_shock": 333.198,
       "regime_signal": "BEARISH",
       "previous_value": 334.131,
-      "last_updated_at": "2026-11-08T22:45:52.011059+00:00"
+      "last_updated_at": "2026-11-09T03:14:38.724180+00:00"
     },
     {
       "node_code": "CPI_SURPRISE",

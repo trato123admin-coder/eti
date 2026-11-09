@@ -177,7 +177,7 @@ class PreMarketScheduler:
         etrade_webhook = os.getenv("ETRADE_WEBHOOK_URL", "http://localhost:8000/api/v1/options/eti/signals")
         eti_dispatch_url = os.getenv("ETI_LOCAL_URL", "http://localhost:3000") + "/api/eti/v1/etrade/signals/dispatch"
         try:
-            r = requests.post(eti_dispatch_url, json={"targetUrl": etrade_webhook}, timeout=5)
+            r = requests.post(eti_dispatch_url, json={"targetUrl": etrade_webhook}, timeout=5, proxies={"http": None, "https": None})
             print(f"\n[FASE 5 - 9:25 EST] Despacho Webhook eTrade ejecutado: HTTP {r.status_code}")
         except Exception as e_push:
             print(f"\n[FASE 5 - 9:25 EST] Aviso despacho Webhook eTrade: {e_push} (eTrade en espera en puerto 8000)")

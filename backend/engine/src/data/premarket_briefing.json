@@ -1,56 +1,44 @@
 {
-  "generated_at_utc": "2026-11-01T18:20:13.440866+00:00",
-  "generated_at_est": "2026-11-01 13:20:13 EST",
+  "generated_at_utc": "2026-11-09T03:14:37.472200+00:00",
+  "generated_at_est": "2026-11-08 22:14:37 EST",
   "news_analysis": {
     "sentiment": "BEARISH_PRESSURE",
-    "hawkish_hits": 5,
+    "hawkish_hits": 0,
     "dovish_hits": 0,
-    "risk_off_hits": 2,
-    "hawkish_ratio": 1.0,
+    "risk_off_hits": 3,
+    "hawkish_ratio": 0.0,
     "catalysts_found": [
       {
-        "headline": "Iran, Qatari mediators hold third day of talks to end US-Iran war - Reuters",
+        "headline": "Qatar says its mediation efforts between US and Iran continue to prevent escalation - Reuters",
         "source": "Reuters",
-        "time": "14:43 EST",
+        "time": "04:23 EST",
         "tone": "HAWKISH / RISK-OFF"
       },
       {
-        "headline": "Qatar surges, bucking Gulf market slide on Iran war concerns - Reuters",
+        "headline": "Two missiles strike Iran's Qeshm Island, Tasnim news agency says - Reuters",
         "source": "Reuters",
-        "time": "13:53 EST",
+        "time": "23:04 EST",
         "tone": "HAWKISH / RISK-OFF"
       },
       {
-        "headline": "FSB says US warned Russia of possible Moscow attack - Reuters",
+        "headline": "US Treasury sanctions Canadian money services firms over Iran-related transactions - Reuters",
         "source": "Reuters",
-        "time": "16:37 EST",
-        "tone": "HAWKISH / RISK-OFF"
-      },
-      {
-        "headline": "Egypt fears escalation in Iran war would be more destructive, foreign minister says - Reuters",
-        "source": "Reuters",
-        "time": "08:21 EST",
-        "tone": "HAWKISH / RISK-OFF"
-      },
-      {
-        "headline": "US approves $2.1 billion Patriot missile sale to Ukraine - Reuters",
-        "source": "Reuters",
-        "time": "19:23 EST",
+        "time": "22:46 EST",
         "tone": "HAWKISH / RISK-OFF"
       }
     ]
   },
   "fss": {
-    "timestamp": "2026-11-01T18:20:18.514830+00:00",
-    "macro_regime": "EXPANSION",
-    "system_coherence_index": 0.75,
-    "directional_bias": "BULLISH",
-    "expected_spx_open_action": "CALL_MOMENTUM_BREAKOUT",
-    "primary_driver_node": "NET_LIQUIDITY",
-    "shock_intensity": 0.4,
-    "recommended_strategy": "CARTER_SPX_MOMENTUM_CALL",
-    "aduana_gate_action": "ALLOW_CALLS_ONLY",
-    "summary_text": "Liquidez positiva impulsando activos de riesgo. Sesgo alcista hacia activos de beta alto.",
+    "timestamp": "2026-11-09T03:14:43.065100+00:00",
+    "macro_regime": "LIQUIDITY_SHOCK",
+    "system_coherence_index": 0.89,
+    "directional_bias": "CHOPPY_VOLATILE",
+    "expected_spx_open_action": "PUT_MOMENTUM_BREAKDOWN",
+    "primary_driver_node": "VIX",
+    "shock_intensity": 0.79,
+    "recommended_strategy": "YOEL_CPI_VOLATILITY_BREAKDOWN_PUT",
+    "aduana_gate_action": "ALLOW_PUTS_ONLY",
+    "summary_text": "Pánico de volatilidad (VIX 25.64). Mercado en régimen de Gamma Negativa. Se prohíben estrategias vendedoras de prima.",
     "top_variables": [
       {
         "code": "CPI_SURPRISE",
@@ -61,25 +49,25 @@
       {
         "code": "YIELD_10Y",
         "name": "Treasury 10Y",
-        "value": "4.93%",
+        "value": "4.86%",
         "bias": "BEARISH"
       },
       {
         "code": "VIX",
         "name": "Índice VIX",
-        "value": "19.42",
+        "value": "25.64",
         "bias": "BEARISH"
       },
       {
         "code": "WTI_OIL",
         "name": "Petróleo WTI (USO)",
-        "value": "$168.83",
+        "value": "$148.41",
         "bias": "BEARISH"
       },
       {
         "code": "GOLD_XAU",
         "name": "Oro Spot (GLD)",
-        "value": "$355.78",
+        "value": "$372.52",
         "bias": "BULLISH"
       }
     ],
@@ -117,12 +105,12 @@
     ]
   },
   "robot_mandate": {
-    "evaluation_time_est": "13:20:13 EST",
-    "macro_regime": "EXPANSION",
-    "bias": "BULLISH",
-    "aduana_gate": "ALLOW_CALLS_ONLY",
-    "primary_playbook": "CARTER_SPX_MOMENTUM_CALL",
-    "coherence_index_pct": 75.0,
+    "evaluation_time_est": "22:14:37 EST",
+    "macro_regime": "LIQUIDITY_SHOCK",
+    "bias": "CHOPPY_VOLATILE",
+    "aduana_gate": "ALLOW_PUTS_ONLY",
+    "primary_playbook": "YOEL_CPI_VOLATILITY_BREAKDOWN_PUT",
+    "coherence_index_pct": 89.0,
     "allowed_underlying": [
       "SPX",
       "QQQ"

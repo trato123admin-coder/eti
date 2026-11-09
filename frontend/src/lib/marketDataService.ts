@@ -678,8 +678,9 @@ export async function getFdeProjectionFromSupabase(isRefresh?: boolean): Promise
     const { data } = dbResult;
     const state = data && data.length > 0 ? data[0] : null;
 
+    const isPutsGate = state?.aduana_gate_action?.includes('PUT') || state?.directional_bias === 'CHOPPY_VOLATILE';
     const bias: 'BEARISH' | 'BULLISH' | 'NEUTRAL' = 
-      state?.directional_bias === 'BEARISH' ? 'BEARISH' :
+      (state?.directional_bias === 'BEARISH' || isPutsGate) ? 'BEARISH' :
       state?.directional_bias === 'BULLISH' ? 'BULLISH' : 'NEUTRAL';
 
     const confidence = Math.round(Number(state?.system_coherence_index || 0.88) * 100);
