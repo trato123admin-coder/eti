@@ -216,7 +216,7 @@ export const activeRuns: Record<string, BackfillRun> = {
     channelId: 'UCBayuhgYpKNbhJxfExYkPfA',
     status: 'COMPLETED',
     progress_pct: 100,
-    phase_message: 'Proceso completado al 100%: 1.198 videos catalogados y 14 reglas extraídas listas para el Robot.',
+    phase_message: 'Proceso completado al 100%: 1.198 videos catalogados y 15 reglas extraídas (5 en Rule Pack Canónico) listas para el Robot.',
     startedAt: new Date().toISOString(),
     budgetCapUsd: 0.0,
     validityYears: 3,
@@ -227,10 +227,10 @@ export const activeRuns: Record<string, BackfillRun> = {
       discardedIrrelevant: 400,
       awaitingText: 838,
       withText: 360,
-      rulesExtracted: 14,
-      rulesReviewed: 14,
-      rulesApproved: 11,
-      rulesConsolidated: 4,
+      rulesExtracted: 15,
+      rulesReviewed: 15,
+      rulesApproved: 12,
+      rulesConsolidated: 5,
     },
     contentTypes: {
       TUTORIAL: 410,
@@ -245,6 +245,19 @@ export const activeRuns: Record<string, BackfillRun> = {
 };
 
 export const initialPendingQueue = [
+  {
+    videoId: 'xGIa8Vg0PWM',
+    title: 'Growing a $2k Account to $65,662.04 in 30 Days (My Day Trading Strategy)',
+    publishedAt: '2026-10-18T13:00:00Z',
+    durationMinutes: 44,
+    contentType: 'TUTORIAL',
+    relevanceScore: 99,
+    expectedYieldScore: 98,
+    priorityRank: 1,
+    views: 285400,
+    status: 'WITH_TEXT',
+    provenance: 'USER_SRT_UPLOAD',
+  },
   {
     videoId: 'ABC123xyz89',
     title: 'Estrategia 0DTE en SPX con VWAP y Gamma Levels (Masterclass)',
@@ -439,6 +452,117 @@ export const rulePacksStore: Record<string, any> = {
         origin_sources: ['Opción Sigma'],
         profit_factor: 1.48,
         trades_count: 19,
+      },
+    ],
+  },
+  RP_WARRIOR_MOMENTUM_V1: {
+    code: 'RP_WARRIOR_MOMENTUM_V1',
+    name: 'Pack Canónico Warrior Momentum & Small Account V1',
+    version: 1,
+    hash: 'e8d19fbc746830d55e8841a0e1c2579b8a3e792c019d3851aaa7c93e4bf18290e2',
+    topic: 'OPTIONS',
+    horizon: 'INTRADAY',
+    lifecycleStatus: 'INFORMATIVE',
+    targetModule: 'MOMENTUM_BREAKOUT_MODULE',
+    rulesCount: 5,
+    profitFactor: 1.84,
+    winRatePct: 69.2,
+    expectancyUsd: 178.5,
+    compiledAt: '2026-11-14T21:00:00Z',
+    notes: 'Pack canónico de Momentum Day Trading de Ross Cameron (Warrior Trading). Incluye estrategias de primer pullback, ruptura HOD y la regla de escalado $2k a $20k del video xGIa8Vg0PWM.',
+    rules: [
+      {
+        rule_code: 'RP_WARRIOR_01_HOD_MOMENTUM_BREAK',
+        title: 'Ruptura de High of Day (HOD) con Volumen Relativo > 5x',
+        category: 'CALL_PUT_ENTRY',
+        direction: 'CALL',
+        rule_nature: 'STANDARD_CONSENSUS',
+        evidence_level: 'E3',
+        parameters: {
+          min_rvol: 5.0,
+          timeframe: '1m/5m',
+          entry_trigger: 'BREAK_HIGH_OF_DAY',
+          stop_loss_pct: 20.0,
+          take_profit_target_pct: 35.0,
+        },
+        applicability_regimes: ['OPENING_MOMENTUM', 'HIGH_RELATIVE_VOLUME'],
+        origin_sources: ['Ross Cameron - Warrior Trading'],
+        profit_factor: 1.85,
+        trades_count: 64,
+      },
+      {
+        rule_code: 'RP_WARRIOR_02_VWAP_BOUNCE_CATALYST',
+        title: 'Reclamo y Rebote en VWAP en Activos con Catalizador Fresco',
+        category: 'CALL_PUT_ENTRY',
+        direction: 'CALL',
+        rule_nature: 'STANDARD_CONSENSUS',
+        evidence_level: 'E2',
+        parameters: {
+          support_level: 'VWAP',
+          timeframe: '5m',
+          risk_reward_min: 2.0,
+          stop_loss_pct: 25.0,
+        },
+        applicability_regimes: ['CATALYST_TREND', 'PULLBACK_SUPPORT'],
+        origin_sources: ['Ross Cameron - Warrior Trading'],
+        profit_factor: 1.74,
+        trades_count: 48,
+      },
+      {
+        rule_code: 'RP_WARRIOR_03_CUSHION_TRADE_SIZING',
+        title: 'Regla de Cushion Trade: 1/4 de Tamaño hasta Acumular Colchón Diario',
+        category: 'RISK_MGMT_EXIT',
+        direction: 'BOTH',
+        rule_nature: 'STANDARD_CONSENSUS',
+        evidence_level: 'E3',
+        parameters: {
+          initial_size_ratio: 0.25,
+          max_consecutive_losses: 2,
+          daily_loss_limit_usd: 150.0,
+        },
+        applicability_regimes: ['ALL'],
+        origin_sources: ['Ross Cameron - Warrior Trading'],
+        profit_factor: 2.15,
+        trades_count: 92,
+      },
+      {
+        rule_code: 'RP_WARRIOR_04_MICRO_PULLBACK_EMA9',
+        title: 'Micro Pullback de 1-2 Velas sobre EMA 9 en Gráfico de 1 Minuto',
+        category: 'CALL_PUT_ENTRY',
+        direction: 'CALL',
+        rule_nature: 'STANDARD_CONSENSUS',
+        evidence_level: 'E2',
+        parameters: {
+          moving_average: 'EMA_9',
+          candle_timeframe: '1m',
+          max_pullback_candles: 2,
+          trigger: 'FIRST_CANDLE_NEW_HIGH',
+        },
+        applicability_regimes: ['PARABOLIC_MOMENTUM'],
+        origin_sources: ['Ross Cameron - Warrior Trading'],
+        profit_factor: 1.78,
+        trades_count: 55,
+      },
+      {
+        rule_code: 'RP_WARRIOR_08_SMALL_ACCOUNT_COMPOUNDING',
+        title: 'Multiplicación de Cuenta Pequeña ($2k a $20k+): Regla Pay the Trader (50% a +$0.15 y BE)',
+        category: 'RISK_MGMT_EXIT',
+        direction: 'BOTH',
+        rule_nature: 'STANDARD_CONSENSUS',
+        evidence_level: 'E3',
+        parameters: {
+          account_tier: 'SMALL_ACCOUNT_2K_TO_20K',
+          base_shares: 500,
+          take_profit_fraction: 0.50,
+          take_profit_cents: 0.15,
+          trailing_stop: 'BREAKEVEN_ON_RUNNER',
+          max_daily_loss_usd: 150.0,
+          source_video_id: 'xGIa8Vg0PWM',
+        },
+        applicability_regimes: ['SMALL_ACCOUNT_COMPOUNDING', 'OPENING_MOMENTUM'],
+        origin_sources: ['Ross Cameron - Warrior Trading (Video xGIa8Vg0PWM)'],
+        profit_factor: 1.91,
+        trades_count: 73,
       },
     ],
   },
@@ -902,7 +1026,7 @@ export async function startBackfillForSource(
     : isSimpler
     ? 11
     : isWarrior
-    ? 14
+    ? 15
     : isSigma
     ? 27
     : Math.max(6, Math.min(20, Math.round(relevant * 0.04)));
@@ -916,7 +1040,7 @@ export async function startBackfillForSource(
     : isSimpler
     ? 4
     : isWarrior
-    ? 4
+    ? 5
     : isSigma
     ? 3
     : Math.max(2, Math.round(rulesExtracted * 0.3));

@@ -222,12 +222,12 @@ export default function ChannelExecutiveDetailPage() {
     validityYears: 3,
     totalAudioHours: 412.6,
     credibilityScore: 87.0,
-    rulesExtracted: 14,
-    rulesInRulePack: 4,
+    rulesExtracted: 15,
+    rulesInRulePack: 5,
     costUsd: 0.0,
     aiModel: "Google Gemini 3.5 Flash (Free Tier)",
     executiveSummary:
-      "Canal oficial de Ross Cameron (Warrior Trading), referente en Day Trading y Scalping de Momentum en apertura estadounidense (9:30 - 11:00 EST). Su metodología se centra en el patrón 'First Pullback / Micro Pullback' tras gaps con catalizador, volumen relativo extremo (>5x), confluencia con VWAP / EMA 9 en gráficos de 1m y 5m, y gestión de riesgo asimétrica 2:1 con corte inmediato al perder el mínimo de la vela previa.",
+      "Canal oficial de Ross Cameron (Warrior Trading), referente en Day Trading y Scalping de Momentum en apertura estadounidense (9:30 - 11:00 EST). Su metodología se centra en el patrón 'First Pullback / Micro Pullback' tras gaps con catalizador, volumen relativo extremo (>5x), confluencia con VWAP / EMA 9 en gráficos de 1m y 5m, gestión de riesgo asimétrica 2:1 y la regla de escalado 'Pay the Trader' (50% en +$0.15 y stop a breakeven) para multiplicación de cuentas pequeñas.",
     keyConclusions: [
       {
         title: "Sesgo Operativo Principal: Momentum Scalping & First Pullback (1m/5m)",
@@ -235,8 +235,8 @@ export default function ChannelExecutiveDetailPage() {
         type: "SCALPING",
       },
       {
-        title: "Aplicación a Opciones Intradía 0DTE/Weekly en Catalizadores",
-        desc: "En activos líquidos y ETFs con opciones (SPY, QQQ, NVDA, TSLA), aplica compras ATM/ITM (Delta 0.50-0.60) en la ruptura del High of Day (HOD) con toma parcial en el primer impulso.",
+        title: "Escalado de Cuenta Pequeña ($2k a $20k) y Regla 'Pay the Trader'",
+        desc: "Estrategia validada en el reto $2k-$65k: compras iniciales de 250-500 acciones, toma de ganancia obligatoria del 50% al primer impulso (+0.15$) y protección inmediata a precio de entrada.",
         type: "INTRADAY",
       },
       {
@@ -825,6 +825,18 @@ export default function ChannelExecutiveDetailPage() {
         citation: "Micro Pullbacks & Bull Flags: Catching Fast Breakouts (Minuto 09:50)",
       },
       {
+        code: "RP_WARRIOR_08_SMALL_ACCOUNT_COMPOUNDING",
+        title: "Multiplicación de Cuenta Pequeña ($2k a $20k+): Regla Pay the Trader (50% a +$0.15 y BE)",
+        direction: "MOMENTUM",
+        delta: "0.55 ATM",
+        dte: "0 - 1",
+        status: "EN_RULE_PACK",
+        stopLoss: "Stop a Breakeven tras +$0.15 / Max Loss -$150 diario",
+        takeProfit: "50% en +$0.15 a +$0.20, dejar correr el resto",
+        regime: "MOMENTUM_COMPOUNDING",
+        citation: "Growing a $2k Account to $65,662.04 in 30 Days (ID: xGIa8Vg0PWM - Minuto 12:30)",
+      },
+      {
         code: "RP_WARRIOR_05_RED_TO_GREEN_OPEN",
         title: "Patrón Red-to-Green en los Primeros 15 Minutos de Apertura",
         direction: "CALL",
@@ -937,6 +949,7 @@ export default function ChannelExecutiveDetailPage() {
     ];
 
     const warriorTitles = [
+      "Growing a $2k Account to $65,662.04 in 30 Days (My Day Trading Strategy)",
       "My #1 Momentum Day Trading Strategy: First Pullback & HOD Break (Full Class)",
       "How to Trade the VWAP Indicator for High Accuracy Intraday Entries",
       "Micro Pullbacks & Bull Flags: Catching Fast Breakouts at the Open",
@@ -967,13 +980,14 @@ export default function ChannelExecutiveDetailPage() {
 
     return {
       index: i + 1,
-      id: `${prefix}_${String(i + 1).padStart(3, "0")}`,
+      id: isWarrior && i === 0 ? "xGIa8Vg0PWM" : `${prefix}_${String(i + 1).padStart(3, "0")}`,
       title: i < titles.length ? titles[i] : (isGala ? `Sesión de Scalping #${videoCount - i}: Trade Breakdown en SPY/QQQ` : isYoel ? `Taller de Opciones #${videoCount - i}: Estrategia de Crédito & Riesgo` : isInsight ? `Masterclass Macro & Volatilidad #${videoCount - i}: Análisis Institucional` : isSimpler ? `Masterclass TTM Squeeze #${videoCount - i}: Estrategia de Opciones & Asimetría` : isWarrior ? `Momentum Day Trading Recap #${videoCount - i}: First Pullback & VWAP Analysis` : `Sesión y Análisis de Opciones #${videoCount - i}: Operativa en Vivo SPX/SPY`),
       type,
-      duration: `${15 + (i % 20)} min`,
-      views: formatNumber(8000 + (i * 420) % 35000),
-      date: `2026-${String(10 - (Math.floor(i / 20) % 9)).padStart(2, "0")}-${String(1 + (i % 28)).padStart(2, "0")}`,
-      hasText: isGala ? i < 32 : isYoel ? i < 115 : isInsight ? i < 67 : isSimpler ? i < 44 : isWarrior ? i < 514 : i < 42,
+      duration: isWarrior && i === 0 ? "44 min" : `${15 + (i % 20)} min`,
+      views: isWarrior && i === 0 ? "285.400" : formatNumber(8000 + (i * 420) % 35000),
+      date: isWarrior && i === 0 ? "2026-10-18" : `2026-${String(10 - (Math.floor(i / 20) % 9)).padStart(2, "0")}-${String(1 + (i % 28)).padStart(2, "0")}`,
+      hasText: isWarrior && i === 0 ? true : (isGala ? i < 32 : isYoel ? i < 115 : isInsight ? i < 67 : isSimpler ? i < 44 : isWarrior ? i < 514 : i < 42),
+      videoUrl: isWarrior && i === 0 ? "https://www.youtube.com/watch?v=xGIa8Vg0PWM" : undefined,
     };
   });
 
@@ -1033,7 +1047,7 @@ export default function ChannelExecutiveDetailPage() {
 
           <div className="flex flex-wrap items-center gap-2.5">
             <Link
-              href="/topics/options/rule-packs"
+              href={isWarrior ? "/topics/options/rule-packs?pack=RP_WARRIOR_MOMENTUM_V1" : "/topics/options/rule-packs"}
               className="px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-lg shadow-emerald-950/50 flex items-center gap-2 transition"
             >
               <Bot className="w-4 h-4" />
@@ -1239,7 +1253,7 @@ export default function ChannelExecutiveDetailPage() {
                 </span>
               </div>
               <Link
-                href="/topics/options/rule-packs"
+                href={isWarrior ? "/topics/options/rule-packs?pack=RP_WARRIOR_MOMENTUM_V1" : "/topics/options/rule-packs"}
                 className="text-cyan-300 hover:text-cyan-200 font-semibold flex items-center gap-1 transition"
               >
                 Abrir Rule Packs <ArrowRight className="w-3.5 h-3.5" />
@@ -1300,7 +1314,19 @@ export default function ChannelExecutiveDetailPage() {
                     <tr key={v.id} className="hover:bg-slate-800/30 transition">
                       <td className="p-3 text-center font-mono text-slate-500 font-bold">{v.index}</td>
                       <td className="p-3">
-                        <div className="font-semibold text-slate-200">{v.title}</div>
+                        <div className="font-semibold text-slate-200 flex items-center gap-2">
+                          <span>{v.title}</span>
+                          {(v as any).videoUrl && (
+                            <a
+                              href={(v as any).videoUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-cyan-400 hover:text-cyan-300 inline-flex items-center gap-1 text-[11px] font-mono font-normal"
+                            >
+                              <ExternalLink className="w-3 h-3" /> YouTube
+                            </a>
+                          )}
+                        </div>
                         <div className="text-[10px] font-mono text-slate-500 mt-0.5">ID: {v.id}</div>
                       </td>
                       <td className="p-3 font-mono text-[11px]">

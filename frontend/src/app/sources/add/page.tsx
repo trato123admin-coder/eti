@@ -191,7 +191,7 @@ export default function AddSourcePage() {
 
     const discoveredCount = resolvedChannel.video_count || 250;
     const relevantCount = dryRunEstimate?.estimated_relevant_videos || Math.max(25, Math.round(discoveredCount * 0.35));
-    const rulesCount = sourceId === "src_warrior_trading" ? 14 : Math.max(6, Math.min(20, Math.round(relevantCount * 0.04)));
+    const rulesCount = sourceId === "src_warrior_trading" ? 15 : Math.max(6, Math.min(20, Math.round(relevantCount * 0.04)));
 
     // Guardar en almacenamiento local del navegador para persistir canales nuevos en el historial y detalle
     if (typeof window !== "undefined") {

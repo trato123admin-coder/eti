@@ -25,7 +25,18 @@ export default function RulePacksPage() {
         const data = await res.json();
         const packs = data.rule_packs || [];
         setRulePacks(packs);
-        if (packs.length > 0) setSelectedPack(packs[0]);
+        if (packs.length > 0) {
+          let initial = packs[0];
+          if (typeof window !== "undefined") {
+            const urlParams = new URLSearchParams(window.location.search);
+            const requested = urlParams.get("pack");
+            if (requested) {
+              const matched = packs.find((p: any) => p.code === requested);
+              if (matched) initial = matched;
+            }
+          }
+          setSelectedPack(initial);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -97,6 +108,26 @@ export default function RulePacksPage() {
           </p>
         </div>
       </div>
+
+      {/* Selector de Rule Packs Disponibles */}
+      {rulePacks.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {rulePacks.map((pack) => (
+            <button
+              key={pack.code}
+              onClick={() => setSelectedPack(pack)}
+              className={`px-4 py-2 rounded-xl text-xs font-mono font-semibold transition border flex items-center gap-2 ${
+                selectedPack?.code === pack.code
+                  ? "bg-cyan-950 text-cyan-300 border-cyan-500 shadow-lg shadow-cyan-950/50"
+                  : "bg-slate-900 text-slate-400 border-slate-800 hover:text-white hover:border-slate-700"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 text-amber-400" />
+              {pack.code} ({pack.rulesCount} reglas)
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Selected Rule Pack Summary Card */}
       {selectedPack && (
