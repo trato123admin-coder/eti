@@ -35,7 +35,7 @@ export default function SourceTranscriptsPage() {
 
   const fetchQueue = async () => {
     try {
-      const res = await fetch(`http://localhost:3001/api/eti/v1/sources/${sourceId}/transcripts/pending-queue`);
+      const res = await fetch(`/api/eti/v1/sources/${sourceId}/transcripts/pending-queue`);
       if (res.ok) {
         const data = await res.json();
         setPendingQueue(data.items || []);
@@ -69,7 +69,7 @@ export default function SourceTranscriptsPage() {
     }
 
     try {
-      const res = await fetch(`http://localhost:3001/api/eti/v1/sources/${sourceId}/transcripts/upload`, {
+      const res = await fetch(`/api/eti/v1/sources/${sourceId}/transcripts/upload`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ files: payloadFiles }),
@@ -96,7 +96,7 @@ export default function SourceTranscriptsPage() {
 
     try {
       const fakeFilename = `manual_paste_${pastingVideoId}.srt`;
-      const res = await fetch(`http://localhost:3001/api/eti/v1/sources/${sourceId}/transcripts/upload`, {
+      const res = await fetch(`/api/eti/v1/sources/${sourceId}/transcripts/upload`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

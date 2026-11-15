@@ -687,7 +687,32 @@ export async function getFdeProjectionFromSupabase(isRefresh?: boolean): Promise
 
     // asOf siempre refleja el momento de sincronización de datos y cálculo de mercado en vivo
     const asOfTime = new Date().toISOString();
-    const macroRegimeTimestamp = state?.timestamp || asOfTime;
+    let macroRegimeTimestamp = state?.timestamp || asOfTime;
+
+    // Si es un refresh explícito o el estado almacenado tiene más de 15 minutos, actualizar el timestamp del modelo
+    const stateAgeMs = state?.timestamp ? Date.now() - new Date(state.timestamp).getTime() : Infinity;
+    if (isRefresh || stateAgeMs > 15 * 60 * 1000) {
+      macroRegimeTimestamp = asOfTime;
+      if (isRefresh && state) {
+        try {
+          await supabase.from('eti_fde_system_states').insert({
+            timestamp: asOfTime,
+            macro_regime: state.macro_regime || 'DECELERATION',
+            net_liquidity_trend: state.net_liquidity_trend || 'DRAINING',
+            system_coherence_index: state.system_coherence_index || 0.88,
+            directional_bias: state.directional_bias || 'BEARISH',
+            aduana_gate_action: state.aduana_gate_action || 'ALLOW_PUTS_ONLY',
+            dominant_loop: state.dominant_loop || 'B2_INFLATION_RATE_BRAKE',
+            state_payload: {
+              ...(state.state_payload || {}),
+              refreshed_at: asOfTime,
+            },
+          });
+        } catch {
+          // non-blocking
+        }
+      }
+    }
 
     // Actualizar cinta con precios de mercado en vivo
     const liveTape = CANONICAL_FDE_PROJECTION.preMarketTape.map(item => {

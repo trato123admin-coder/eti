@@ -145,9 +145,7 @@ export default function FdePreMarketConsole({ initialData }: { initialData?: Fde
   };
 
   useEffect(() => {
-    if (!initialData) {
-      fetchProjection();
-    }
+    fetchProjection();
   }, []);
 
   // Polling dinámico: 5 minutos (300s) o 15 minutos (900s)

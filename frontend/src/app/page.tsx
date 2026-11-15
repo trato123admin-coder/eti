@@ -13,6 +13,9 @@ import {
   getFdeProjectionFromSupabase
 } from "@/lib/marketDataService";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // Fetch live market data (with direct Yahoo Finance & Supabase quotes for cloud serverless deployments)
 async function getMarketData() {
   const [instruments, projections, fdeProjection] = await Promise.all([

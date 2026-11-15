@@ -1,17 +1,17 @@
 {
   "success": true,
-  "generated_at": "2026-11-09T03:14:43.065100+00:00",
+  "generated_at": "2026-11-15T00:13:06.543688+00:00",
   "fss": {
-    "timestamp": "2026-11-09T03:14:43.065100+00:00",
-    "macro_regime": "LIQUIDITY_SHOCK",
-    "system_coherence_index": 0.89,
-    "directional_bias": "CHOPPY_VOLATILE",
+    "timestamp": "2026-11-15T00:13:06.543688+00:00",
+    "macro_regime": "DECELERATION",
+    "system_coherence_index": 0.88,
+    "directional_bias": "BEARISH",
     "expected_spx_open_action": "PUT_MOMENTUM_BREAKDOWN",
-    "primary_driver_node": "VIX",
-    "shock_intensity": 0.79,
+    "primary_driver_node": "YIELD_10Y",
+    "shock_intensity": 0.72,
     "recommended_strategy": "YOEL_CPI_VOLATILITY_BREAKDOWN_PUT",
     "aduana_gate_action": "ALLOW_PUTS_ONLY",
-    "summary_text": "Pánico de volatilidad (VIX 25.64). Mercado en régimen de Gamma Negativa. Se prohíben estrategias vendedoras de prima.",
+    "summary_text": "Presión sostenida por tasas de interés (Treasury 10Y en 5.15% y VIX en 19.30). Costo de capital restrictivo castiga múltiplos de crecimiento y mega-caps tecnológicas. Sesgo bajista: monitorear rebotes débiles hacia VWAP para buscar continuaciones en PUT 0DTE.",
     "top_variables": [
       {
         "code": "CPI_SURPRISE",
@@ -22,25 +22,25 @@
       {
         "code": "YIELD_10Y",
         "name": "Treasury 10Y",
-        "value": "4.86%",
+        "value": "5.15%",
         "bias": "BEARISH"
       },
       {
         "code": "VIX",
         "name": "Índice VIX",
-        "value": "25.64",
+        "value": "19.30",
         "bias": "BEARISH"
       },
       {
         "code": "WTI_OIL",
         "name": "Petróleo WTI (USO)",
-        "value": "$148.41",
+        "value": "$145.58",
         "bias": "BEARISH"
       },
       {
         "code": "GOLD_XAU",
         "name": "Oro Spot (GLD)",
-        "value": "$372.52",
+        "value": "$355.45",
         "bias": "BULLISH"
       }
     ],
@@ -168,9 +168,9 @@
       "unit": "PERCENT",
       "primary_source": "FRED",
       "ticker_or_series_id": "DGS2",
-      "current_value": 4.46,
+      "current_value": 4.86,
       "expected_value": 4.25,
-      "surprise_shock": 0.21,
+      "surprise_shock": 0.61,
       "regime_signal": "BEARISH"
     },
     {
@@ -182,9 +182,9 @@
       "unit": "PERCENT",
       "primary_source": "FRED",
       "ticker_or_series_id": "DGS10",
-      "current_value": 4.86,
+      "current_value": 5.15,
       "expected_value": 4.8,
-      "surprise_shock": 0.06,
+      "surprise_shock": 0.35,
       "regime_signal": "BEARISH"
     },
     {
@@ -223,12 +223,12 @@
       "unit": "PERCENT",
       "primary_source": "FRED",
       "ticker_or_series_id": "CPIAUCSL",
-      "current_value": 336.298,
+      "current_value": 337.476,
       "expected_value": 3.1,
-      "surprise_shock": 333.198,
+      "surprise_shock": 334.376,
       "regime_signal": "BEARISH",
-      "previous_value": 334.131,
-      "last_updated_at": "2026-11-09T03:14:38.724180+00:00"
+      "previous_value": 336.298,
+      "last_updated_at": "2026-11-15T00:13:01.016692+00:00"
     },
     {
       "node_code": "CPI_SURPRISE",
@@ -265,11 +265,11 @@
       "unit": "USD",
       "primary_source": "YFINANCE",
       "ticker_or_series_id": "USO",
-      "current_value": 148.41,
+      "current_value": 145.58,
       "expected_value": 160.0,
-      "surprise_shock": -11.59,
+      "surprise_shock": -14.42,
       "regime_signal": "BEARISH",
-      "previous_value": 148.21
+      "previous_value": 146.07
     },
     {
       "node_code": "COPPER_HG",
@@ -280,11 +280,11 @@
       "unit": "USD",
       "primary_source": "YFINANCE",
       "ticker_or_series_id": "CPER",
-      "current_value": 37.67,
+      "current_value": 36.53,
       "expected_value": 39.5,
-      "surprise_shock": -1.83,
+      "surprise_shock": -2.97,
       "regime_signal": "BEARISH",
-      "previous_value": 37.36
+      "previous_value": 37.24
     },
     {
       "node_code": "NON_FARM_PAYROLLS",
@@ -323,11 +323,11 @@
       "unit": "INDEX",
       "primary_source": "YFINANCE",
       "ticker_or_series_id": "UUP",
-      "current_value": 29.13,
+      "current_value": 29.5,
       "expected_value": 28.5,
-      "surprise_shock": 0.63,
+      "surprise_shock": 1.0,
       "regime_signal": "BEARISH",
-      "previous_value": 28.92
+      "previous_value": 29.42
     },
     {
       "node_code": "GOLD_XAU",
@@ -338,11 +338,11 @@
       "unit": "USD",
       "primary_source": "YFINANCE",
       "ticker_or_series_id": "GLD",
-      "current_value": 372.52,
+      "current_value": 355.45,
       "expected_value": 350.0,
-      "surprise_shock": 22.52,
+      "surprise_shock": 5.45,
       "regime_signal": "NEUTRAL",
-      "previous_value": 375.49
+      "previous_value": 354.89
     },
     {
       "node_code": "COPPER_GOLD_RATIO",
@@ -352,9 +352,9 @@
       "category": "COMMODITY",
       "unit": "RATIO",
       "primary_source": "INTERNAL",
-      "current_value": 0.1011,
+      "current_value": 0.1028,
       "expected_value": 0.1128,
-      "surprise_shock": -0.0117,
+      "surprise_shock": -0.01,
       "regime_signal": "BEARISH"
     },
     {
@@ -380,11 +380,11 @@
       "unit": "POINTS",
       "primary_source": "YFINANCE",
       "ticker_or_series_id": "^VIX",
-      "current_value": 25.64,
+      "current_value": 19.3,
       "expected_value": 15.5,
-      "surprise_shock": 10.14,
+      "surprise_shock": 3.8,
       "regime_signal": "BEARISH",
-      "previous_value": 28.18
+      "previous_value": 18.7
     },
     {
       "node_code": "CREDIT_SPREAD_HYG_LQD",
@@ -422,11 +422,11 @@
       "unit": "USD",
       "primary_source": "FINNHUB",
       "ticker_or_series_id": "XLK",
-      "current_value": 164.74,
+      "current_value": 170.28,
       "expected_value": 230.0,
-      "surprise_shock": -65.26,
+      "surprise_shock": -59.72,
       "regime_signal": "BEARISH",
-      "previous_value": 162.38
+      "previous_value": 173.77
     },
     {
       "node_code": "ENERGY_SECTOR_XLE",
@@ -437,11 +437,11 @@
       "unit": "USD",
       "primary_source": "FINNHUB",
       "ticker_or_series_id": "XLE",
-      "current_value": 61.62,
+      "current_value": 64.96,
       "expected_value": 91.0,
-      "surprise_shock": -29.38,
+      "surprise_shock": -26.04,
       "regime_signal": "BULLISH",
-      "previous_value": 61.63
+      "previous_value": 64.33
     },
     {
       "node_code": "FINANCIAL_SECTOR_XLF",
@@ -452,11 +452,11 @@
       "unit": "USD",
       "primary_source": "FINNHUB",
       "ticker_or_series_id": "XLF",
-      "current_value": 57.16,
+      "current_value": 58.68,
       "expected_value": 48.2,
-      "surprise_shock": 8.96,
+      "surprise_shock": 10.48,
       "regime_signal": "NEUTRAL",
-      "previous_value": 57.5
+      "previous_value": 58.21
     },
     {
       "node_code": "SEMICONDUCTORS_SMH",

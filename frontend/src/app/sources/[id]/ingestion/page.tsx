@@ -14,12 +14,20 @@ export default function SourceIngestionDashboard() {
   const sourceId = (params?.id as string) || "src_opcion_sigma";
 
   const [runData, setRunData] = useState<any>(null);
+  const [customChannelMeta, setCustomChannelMeta] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const fetchStatus = async () => {
+  const fetchStatus = async (metaHint?: any) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/eti/v1/sources/${sourceId}/backfill/status`);
+      const hint = metaHint || customChannelMeta;
+      const qs = new URLSearchParams();
+      if (hint?.name) qs.set("title", hint.name);
+      if (hint?.handle) qs.set("handle", hint.handle);
+      if (hint?.discovered) qs.set("discovered", String(hint.discovered));
+      const queryStr = qs.toString() ? `?${qs.toString()}` : "";
+
+      const res = await fetch(`/api/eti/v1/sources/${sourceId}/backfill/status${queryStr}`);
       if (res.ok) {
         const data = await res.json();
         setRunData(data);
@@ -32,15 +40,40 @@ export default function SourceIngestionDashboard() {
   };
 
   useEffect(() => {
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 4000);
+    let foundMeta: any = null;
+    if (typeof window !== "undefined") {
+      try {
+        const sp = new URLSearchParams(window.location.search);
+        const qTitle = sp.get("title");
+        const qHandle = sp.get("handle");
+        const qDisc = sp.get("discovered");
+
+        const savedRaw = localStorage.getItem("eti_custom_ingested_channels");
+        const savedList: any[] = savedRaw ? JSON.parse(savedRaw) : [];
+        foundMeta = savedList.find((c) => c.id === sourceId) || null;
+        if (!foundMeta && (qTitle || qHandle)) {
+          foundMeta = {
+            id: sourceId,
+            name: qTitle || sourceId,
+            handle: qHandle || `@${sourceId.replace("src_", "")}`,
+            discovered: Number(qDisc) || 250,
+          };
+        }
+        if (foundMeta) setCustomChannelMeta(foundMeta);
+      } catch {
+        // Ignore
+      }
+    }
+
+    fetchStatus(foundMeta);
+    const interval = setInterval(() => fetchStatus(foundMeta), 6000);
     return () => clearInterval(interval);
   }, [sourceId]);
 
   const handleControlAction = async (action: "PAUSE" | "RESUME" | "CANCEL") => {
     setActionLoading(true);
     try {
-      await fetch(`http://localhost:3001/api/eti/v1/sources/${sourceId}/backfill/control`, {
+      await fetch(`/api/eti/v1/sources/${sourceId}/backfill/control`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
@@ -53,26 +86,32 @@ export default function SourceIngestionDashboard() {
     }
   };
 
-  const isGala = sourceId.includes("gala");
-  const isYoel = sourceId.includes("yoel");
-  const isInsight = sourceId.includes("insight") || sourceId.includes("lakha");
-  const isSimpler = sourceId.includes("simpler") || sourceId.includes("carter");
-  const isSigma = sourceId.includes("sigma");
+  const lowerId = sourceId.toLowerCase();
+  const isGala = lowerId.includes("gala");
+  const isYoel = lowerId.includes("yoel");
+  const isInsight = lowerId.includes("insight") || lowerId.includes("lakha");
+  const isSimpler = lowerId.includes("simpler") || lowerId.includes("carter");
+  const isWarrior = lowerId.includes("warrior") || lowerId.includes("daytradewarrior");
+  const isSigma = lowerId.includes("sigma");
 
-  const channelName = runData?.channelTitle || (
+  const channelName = customChannelMeta?.name || runData?.channelTitle || (
     isGala ? "Gala Trades" :
     isYoel ? "Yoel Sardiñas" :
     isInsight ? "Options Insight" :
     isSimpler ? "John Carter (Simpler Trading)" :
-    "Opción Sigma"
+    isWarrior ? "Ross Cameron - Warrior Trading" :
+    isSigma ? "Opción Sigma" :
+    sourceId.replace(/^src_/, "").replace(/_/g, " ")
   );
 
-  const channelHandle = runData?.channelHandle || (
+  const channelHandle = customChannelMeta?.handle || runData?.channelHandle || (
     isGala ? "@galatrades" :
     isYoel ? "@yoelsardinasoficial" :
     isInsight ? "@OptionsInsight" :
     isSimpler ? "@SimplerTrading" :
-    "@OPCIONSIGMA"
+    isWarrior ? "@DaytradeWarrior" :
+    isSigma ? "@OPCIONSIGMA" :
+    `@${sourceId.replace(/^src_/, "")}`
   );
 
   const defaultFunnel = isGala ? {
@@ -119,6 +158,28 @@ export default function SourceIngestionDashboard() {
     rulesReviewed: 11,
     rulesApproved: 9,
     rulesConsolidated: 4,
+  } : isWarrior ? {
+    discovered: 3725,
+    relevant: 1198,
+    discardedOutOfWindow: 2127,
+    discardedIrrelevant: 400,
+    awaitingText: 838,
+    withText: 360,
+    rulesExtracted: 14,
+    rulesReviewed: 14,
+    rulesApproved: 11,
+    rulesConsolidated: 4,
+  } : customChannelMeta ? {
+    discovered: customChannelMeta.discovered || 250,
+    relevant: customChannelMeta.relevant || Math.round((customChannelMeta.discovered || 250) * 0.35),
+    discardedOutOfWindow: Math.round((customChannelMeta.discovered || 250) * 0.55),
+    discardedIrrelevant: Math.round((customChannelMeta.discovered || 250) * 0.1),
+    awaitingText: Math.round((customChannelMeta.relevant || 88) * 0.7),
+    withText: Math.round((customChannelMeta.relevant || 88) * 0.3),
+    rulesExtracted: customChannelMeta.rulesExtracted || 8,
+    rulesReviewed: customChannelMeta.rulesExtracted || 8,
+    rulesApproved: Math.max(1, (customChannelMeta.rulesExtracted || 8) - 2),
+    rulesConsolidated: customChannelMeta.rulesConsolidated || 2,
   } : {
     discovered: 722,
     relevant: 245,
@@ -154,6 +215,11 @@ export default function SourceIngestionDashboard() {
     LIVE_SESSION: 72,
     RECAP: 12,
     MARKET_ANALYSIS: 6,
+  } : isWarrior ? {
+    TUTORIAL: 410,
+    LIVE_SESSION: 520,
+    RECAP: 218,
+    MARKET_ANALYSIS: 50,
   } : {
     TUTORIAL: 68,
     LIVE_SESSION: 145,
@@ -273,6 +339,7 @@ export default function SourceIngestionDashboard() {
               isYoel ? "Credit Spreads, Iron Condors mensuales y stop loss 2x crédito" :
               isInsight ? "Posicionamiento institucional, skew, term structure y análisis macro de volatilidad" :
               isSimpler ? "TTM Squeeze, roturas de compresión y asimetría de volatilidad" :
+              isWarrior ? "Momentum Gap & Go, Micro-Pullbacks en 1m/5m, Halts de volatilidad y control de riesgo intradía" :
               "0DTE SPX, cruces VWAP y disciplina temporal"
             }), de las cuales <strong className="text-amber-300 font-mono">{funnel.rulesConsolidated} reglas canónicas</strong> ya fueron compiladas en el Rule Pack del Robot eTrade.
           </p>
@@ -473,7 +540,7 @@ export default function SourceIngestionDashboard() {
             <h3 className="font-bold text-base text-white">Siguiente Paso: Ver Informe Ejecutivo del Canal y Reglas Extraídas</h3>
           </div>
           <p className="text-xs text-slate-300 max-w-2xl">
-            El catálogo de <span className="text-cyan-300 font-semibold">245 videos relevantes</span> ha sido analizado. Consulta las conclusiones del autor, la filosofía operativa y las <span className="text-amber-300 font-semibold">27 reglas extraídas clasificadas por Opciones Intradía, Scalping y Swing Trading</span>.
+            El catálogo de <span className="text-cyan-300 font-semibold">{funnel.relevant} videos relevantes</span> ha sido analizado. Consulta las conclusiones del autor, la filosofía operativa y las <span className="text-amber-300 font-semibold">{funnel.rulesExtracted} reglas extraídas clasificadas por Opciones Intradía, Scalping y Swing Trading</span>.
           </p>
         </div>
 

@@ -4,15 +4,141 @@ import {
   GitFork, ArrowRight, Zap, Info
 } from "lucide-react";
 
+const FALLBACK_PLAYBOOK = {
+  topic_code: "OPTIONS",
+  version: "1.0.0",
+  principle_notice: "PRINCIPIO DE DISEÑO ETI: Consenso entre influencers ≠ Validez estadística.",
+  total_rules: 5,
+  rules: [
+    {
+      id: "rule_opt_001",
+      category: "REGIME_FILTER",
+      title: "Filtro de Apertura: Evitar primeros 15 minutos (9:30 - 9:45 EST)",
+      description:
+        "No ejecutar compras de contratos 0DTE en los primeros 15 minutos de sesión regular debido a horquillas (Bid-Ask) abiertas y distorsión de IV inicial.",
+      horizon: "INTRADAY",
+      consensus: {
+        count: 4,
+        total_sources: 5,
+        percentage: 80,
+        supporting_sources: ["Opción Sigma", "Gala Trades", "Yoel Sardiñas", "John Carter"],
+      },
+      parameter_variants: {
+        wait_minutes_after_open: [15, 30],
+      },
+      contradictions: [
+        "Gala Trades permite entradas al minuto 5 solo si hay ruptura limpia de nivel pre-market con volumen > 200%.",
+      ],
+      rule_nature: "STANDARD_CONSENSUS",
+      validation_status: "VALIDATED",
+      evidence_level: "E2",
+      usage_in_robot: "RISK_FILTER",
+    },
+    {
+      id: "rule_opt_002",
+      category: "CONTRACT_SELECTION",
+      title: "Selección de Strike por Delta (0.40 a 0.55 ATM/ITM ligero)",
+      description:
+        "Para compras direccionales intradía (CALL/PUT), seleccionar contratos con Delta entre 0.40 y 0.55 para equilibrar apalancamiento Gamma y minimizar decadencia Theta.",
+      horizon: "INTRADAY",
+      consensus: {
+        count: 4,
+        total_sources: 5,
+        percentage: 80,
+        supporting_sources: ["Opción Sigma", "Gala Trades", "Options Insight", "John Carter"],
+      },
+      parameter_variants: {
+        delta_min: [0.35, 0.4, 0.5],
+        delta_max: [0.55, 0.65],
+      },
+      contradictions: [
+        "John Carter prefiere Delta >= 0.60 (In-The-Money) cuando el VIX supera 22 para reducir exposición a Vega negativa.",
+      ],
+      rule_nature: "STANDARD_CONSENSUS",
+      validation_status: "VALIDATED",
+      evidence_level: "E2",
+      usage_in_robot: "PRIMARY_TRIGGER",
+    },
+    {
+      id: "rule_opt_003",
+      category: "ENTRY_TRIGGER",
+      title: "Pullback a VWAP con confirmación de EMA 9 en 2m/5m",
+      description:
+        "En tendencia intradía confirmada (SPY y QQQ alineados sobre VWAP), entrar en CALL al cierre de vela de 2m o 5m que recupere la EMA 9 tras tocar VWAP.",
+      horizon: "INTRADAY",
+      consensus: {
+        count: 3,
+        total_sources: 5,
+        percentage: 60,
+        supporting_sources: ["Gala Trades", "Yoel Sardiñas", "Opción Sigma"],
+      },
+      parameter_variants: {
+        timeframe: ["2m", "5m"],
+        ema_period: [8, 9, 21],
+      },
+      contradictions: [],
+      rule_nature: "STANDARD_CONSENSUS",
+      validation_status: "VALIDATED",
+      evidence_level: "E2",
+      usage_in_robot: "PRIMARY_TRIGGER",
+    },
+    {
+      id: "rule_opt_004",
+      category: "CONFIRMATION",
+      title: "Bloqueo de Compras en Muralla Gamma (GEX Call/Put Wall)",
+      description:
+        "No abrir CALLs direccionales si el subyacente (SPX/SPY) se encuentra a menos de 0.15% por debajo del Call Wall institucional del día.",
+      horizon: "INTRADAY",
+      consensus: {
+        count: 2,
+        total_sources: 5,
+        percentage: 40,
+        supporting_sources: ["Options Insight (Imran Lakha)", "Opción Sigma"],
+      },
+      parameter_variants: {
+        min_distance_to_wall_pct: [0.15, 0.25],
+      },
+      contradictions: [],
+      rule_nature: "AUTHOR_EDGE_CANDIDATE",
+      validation_status: "VALIDATED",
+      evidence_level: "E2",
+      usage_in_robot: "RISK_FILTER",
+    },
+    {
+      id: "rule_opt_005",
+      category: "EXIT_AND_INVALIDATION",
+      title: "Time-Stop Obligatorio para 0DTE (Corte por Decadencia Theta)",
+      description:
+        "Cerrar cualquier posición compradora 0DTE que no alcance +15% de beneficio en los primeros 25 minutos desde la entrada, o forzar salida antes de las 15:45 EST.",
+      horizon: "INTRADAY",
+      consensus: {
+        count: 5,
+        total_sources: 5,
+        percentage: 100,
+        supporting_sources: ["Opción Sigma", "Gala Trades", "Yoel Sardiñas", "Options Insight", "John Carter"],
+      },
+      parameter_variants: {
+        max_hold_minutes_stagnant: [20, 25, 30],
+        hard_close_time_est: ["15:30", "15:45"],
+      },
+      contradictions: [],
+      rule_nature: "STANDARD_CONSENSUS",
+      validation_status: "VALIDATED",
+      evidence_level: "E2",
+      usage_in_robot: "EXIT_RULE",
+    },
+  ],
+};
+
 async function getPlaybook(code: string) {
-  const engineUrl = process.env.NEXT_PUBLIC_ENGINE_URL || "http://localhost:3001";
+  const engineUrl = process.env.NEXT_PUBLIC_ENGINE_URL;
+  if (!engineUrl) return FALLBACK_PLAYBOOK;
   try {
     const res = await fetch(`${engineUrl}/api/eti/v1/topics/${code}/playbook`, { next: { revalidate: 30 } });
-    if (!res.ok) return null;
+    if (!res.ok) return FALLBACK_PLAYBOOK;
     return await res.json();
   } catch (err) {
-    console.error("Error fetching playbook:", err);
-    return null;
+    return FALLBACK_PLAYBOOK;
   }
 }
 

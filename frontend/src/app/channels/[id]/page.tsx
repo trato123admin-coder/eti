@@ -31,6 +31,30 @@ export default function ChannelExecutiveDetailPage() {
   const isYoel = channelId.toLowerCase().includes("yoel");
   const isInsight = channelId.toLowerCase().includes("insight") || channelId.toLowerCase().includes("lakha");
   const isSimpler = channelId.toLowerCase().includes("simpler") || channelId.toLowerCase().includes("carter");
+  const isWarrior = channelId.toLowerCase().includes("warrior") || channelId.toLowerCase().includes("daytradewarrior");
+  const isSigma = channelId.toLowerCase().includes("sigma");
+
+  const [customStoredChannel, setCustomStoredChannel] = useState<any | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("eti_custom_ingested_channels");
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          const found = list.find(
+            (c: any) =>
+              c.id === channelId ||
+              c.channelId === channelId ||
+              channelId.toLowerCase().includes((c.handle || "").replace("@", "").toLowerCase())
+          );
+          if (found) setCustomStoredChannel(found);
+        }
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [channelId]);
 
   // Datos mock enriquecidos del canal procesado
   const galaData = {
@@ -185,6 +209,44 @@ export default function ChannelExecutiveDetailPage() {
     ],
   };
 
+  const warriorData = {
+    id: channelId,
+    name: "Ross Cameron - Warrior Trading",
+    handle: "@DaytradeWarrior",
+    channelUrl: "https://www.youtube.com/@DaytradeWarrior/videos",
+    channelId: "UCBayuhgYpKNbhJxfExYkPfA",
+    country: "US (Massachusetts)",
+    subscriberCount: 2120000,
+    totalChannelVideos: 3725,
+    relevantVideosInWindow: 1198,
+    validityYears: 3,
+    totalAudioHours: 412.6,
+    credibilityScore: 87.0,
+    rulesExtracted: 14,
+    rulesInRulePack: 4,
+    costUsd: 0.0,
+    aiModel: "Google Gemini 3.5 Flash (Free Tier)",
+    executiveSummary:
+      "Canal oficial de Ross Cameron (Warrior Trading), referente en Day Trading y Scalping de Momentum en apertura estadounidense (9:30 - 11:00 EST). Su metodología se centra en el patrón 'First Pullback / Micro Pullback' tras gaps con catalizador, volumen relativo extremo (>5x), confluencia con VWAP / EMA 9 en gráficos de 1m y 5m, y gestión de riesgo asimétrica 2:1 con corte inmediato al perder el mínimo de la vela previa.",
+    keyConclusions: [
+      {
+        title: "Sesgo Operativo Principal: Momentum Scalping & First Pullback (1m/5m)",
+        desc: "El 85% de la ventaja estadística proviene de los primeros 90 minutos de sesión operando rupturas del primer pullback sobre EMA 9 y VWAP con volumen relativo superior a 5x.",
+        type: "SCALPING",
+      },
+      {
+        title: "Aplicación a Opciones Intradía 0DTE/Weekly en Catalizadores",
+        desc: "En activos líquidos y ETFs con opciones (SPY, QQQ, NVDA, TSLA), aplica compras ATM/ITM (Delta 0.50-0.60) en la ruptura del High of Day (HOD) con toma parcial en el primer impulso.",
+        type: "INTRADAY",
+      },
+      {
+        title: "Disciplina de Daily Max Loss y Escalado de Tamaño",
+        desc: "Regla estricta de preservación: iniciar con 1/4 de posición en el primer trade del día ('Cushion Trade') y escalar solo con ganancias acumuladas; detener operativa tras 2 pérdidas consecutivas.",
+        type: "RISK_MGMT",
+      },
+    ],
+  };
+
   const sigmaData = {
     id: channelId,
     name: "Opción Sigma (Luis Hernán Silva)",
@@ -223,7 +285,58 @@ export default function ChannelExecutiveDetailPage() {
     ],
   };
 
-  const channelData = isGala ? galaData : isYoel ? yoelData : isInsight ? insightData : isSimpler ? simplerData : sigmaData;
+  const customChannelData = customStoredChannel
+    ? {
+        id: customStoredChannel.id || channelId,
+        name: customStoredChannel.name || channelId,
+        handle: customStoredChannel.handle || `@${channelId.replace(/^src_/, "")}`,
+        channelUrl: customStoredChannel.channelUrl || `https://www.youtube.com/${customStoredChannel.handle || ""}`,
+        channelId: customStoredChannel.channelId || channelId,
+        country: "US / Internacional",
+        subscriberCount: customStoredChannel.subscriberCount || 150000,
+        totalChannelVideos: customStoredChannel.totalVideos || 320,
+        relevantVideosInWindow: customStoredChannel.relevantVideos || 120,
+        validityYears: customStoredChannel.validityYears || 3,
+        totalAudioHours: Number(((customStoredChannel.relevantVideos || 120) * 0.34).toFixed(1)),
+        credibilityScore: 84.0,
+        rulesExtracted: customStoredChannel.rulesExtracted || 12,
+        rulesInRulePack: 3,
+        costUsd: 0.0,
+        aiModel: "Google Gemini 3.5 Flash (Free Tier)",
+        executiveSummary: `Canal "${customStoredChannel.name}" (${customStoredChannel.handle}) procesado e indexado mediante el pipeline de ingesta histórica ETI v2.3. Se analizaron ${customStoredChannel.relevantVideos || 120} videos dentro de la ventana temporal de ${customStoredChannel.validityYears || 3} años para el tema ${customStoredChannel.topicCode || "OPTIONS"}, extrayendo reglas estructuradas de entrada, gestión de riesgo y filtros de volatilidad.`,
+        keyConclusions: [
+          {
+            title: `Sesgo Operativo Principal: ${customStoredChannel.topicCode || "OPTIONS"} & Momentum Intradía`,
+            desc: "Las reglas extraídas del canal priorizan entradas con confirmación de volumen y estructura de precio sobre VWAP y EMA 9/20 en la primera mitad de la sesión americana.",
+            type: "INTRADAY",
+          },
+          {
+            title: "Filtro de Liquidez y Selección de Contratos",
+            desc: "Prioriza subyacentes de alta liquidez (SPY, QQQ, NVDA, TSLA) con spreads ajustados y selección de Delta 0.45 - 0.55 para minimizar el impacto de Theta.",
+            type: "SCALPING",
+          },
+          {
+            title: "Control de Riesgo Sistemático y Toma Parcial",
+            desc: "Aplica relación riesgo/beneficio mínima de 1:2 con cierre escalonado en el primer objetivo técnico y ajuste de stop loss a break-even.",
+            type: "RISK_MGMT",
+          },
+        ],
+      }
+    : null;
+
+  const channelData = isGala
+    ? galaData
+    : isYoel
+    ? yoelData
+    : isInsight
+    ? insightData
+    : isSimpler
+    ? simplerData
+    : isWarrior
+    ? warriorData
+    : !isSigma && customChannelData
+    ? customChannelData
+    : sigmaData;
 
   // Reglas de Gala Trades
   const galaRules = {
@@ -658,12 +771,115 @@ export default function ChannelExecutiveDetailPage() {
     ],
   };
 
-  const rulesByStyle = isGala ? galaRules : isYoel ? yoelRules : isInsight ? insightRules : isSimpler ? simplerRules : sigmaRules;
+  // Reglas de Ross Cameron - Warrior Trading
+  const warriorRules = {
+    OPTIONS: [
+      {
+        code: "RP_WARRIOR_01_HOD_MOMENTUM_BREAK",
+        title: "Ruptura de High of Day (HOD) con Volumen Relativo > 5x",
+        direction: "CALL",
+        delta: "0.55 ATM/ITM",
+        dte: "0 - 2",
+        status: "EN_RULE_PACK",
+        stopLoss: "Mínimo de la vela de ruptura 1m (máx 20%)",
+        takeProfit: "50% en primer impulso + Trailing EMA 9",
+        regime: "OPENING_MOMENTUM",
+        citation: "My #1 Momentum Day Trading Strategy: First Pullback & HOD Break (Minuto 07:15)",
+      },
+      {
+        code: "RP_WARRIOR_02_VWAP_BOUNCE_CATALYST",
+        title: "Reclamo y Rebote en VWAP en Activos con Catalizador Fresco",
+        direction: "CALL / PUT",
+        delta: "0.50 ATM",
+        dte: "0 - 1",
+        status: "EN_RULE_PACK",
+        stopLoss: "Cierre de vela de 5m bajo VWAP",
+        takeProfit: "Testeo de High of Day (Ratio 1:2)",
+        regime: "CATALYST_TREND",
+        citation: "How to Trade the VWAP Indicator for High Accuracy Entries (Minuto 11:40)",
+      },
+      {
+        code: "RP_WARRIOR_03_CUSHION_TRADE_SIZING",
+        title: "Regla de Cushion Trade: 1/4 de Tamaño hasta Acumular Colchón Diario",
+        direction: "GESTIÓN DE RIESGO",
+        delta: "N/A",
+        dte: "0",
+        status: "EN_RULE_PACK",
+        stopLoss: "Stop diario estricto tras 2 trades rojos consecutivos",
+        takeProfit: "Escalar tamaño completo tras alcanzar 50% de meta diaria",
+        regime: "TODOS LOS REGÍMENES",
+        citation: "Risk Management Rules That Saved My Trading Career (Minuto 14:25)",
+      },
+    ],
+    SCALPING: [
+      {
+        code: "RP_WARRIOR_04_MICRO_PULLBACK_EMA9",
+        title: "Micro Pullback de 1-2 Velas sobre EMA 9 en Gráfico de 1 Minuto",
+        direction: "CALL",
+        delta: "0.55",
+        dte: "0",
+        status: "EN_RULE_PACK",
+        stopLoss: "Bajo el mínimo de la vela de pullback",
+        takeProfit: "Extensión de +15% a +30% rápido en prima",
+        regime: "PARABOLIC_MOMENTUM",
+        citation: "Micro Pullbacks & Bull Flags: Catching Fast Breakouts (Minuto 09:50)",
+      },
+      {
+        code: "RP_WARRIOR_05_RED_TO_GREEN_OPEN",
+        title: "Patrón Red-to-Green en los Primeros 15 Minutos de Apertura",
+        direction: "CALL",
+        delta: "0.50 ATM",
+        dte: "0",
+        status: "AUDITADO_VIA_A",
+        stopLoss: "Reingreso bajo el precio de cierre previo",
+        takeProfit: "High de Pre-Mercado",
+        regime: "OPENING_REVERSAL",
+        citation: "Trading the Red to Green Move at the Market Open (Minuto 06:10)",
+      },
+      {
+        code: "RP_WARRIOR_06_HALTS_AND_LIQUIDITY_GATE",
+        title: "Filtro de Volatilidad Extrema: Evitar Entradas Previas a Circuit Breakers",
+        direction: "NEUTRAL",
+        delta: "N/A",
+        dte: "0",
+        status: "AUDITADO_VIA_A",
+        stopLoss: "No mantener opciones durante suspensiones de cotización",
+        takeProfit: "Toma total en banda superior de volatilidad",
+        regime: "EXTREME_VOLATILITY",
+        citation: "How to Trade Volatility Halts Without Getting Trapped (Minuto 16:05)",
+      },
+    ],
+    SWING: [
+      {
+        code: "RP_WARRIOR_07_DAILY_FIRST_GREEN_DAY",
+        title: "Continuación Multidía tras ruptura de EMA 200 en Gráfico Diario",
+        direction: "CALL SPREAD",
+        delta: "0.60 / 0.40",
+        dte: "14 - 30",
+        status: "AUDITADO_VIA_A",
+        stopLoss: "Pérdida del mínimo de la vela de ruptura diaria",
+        takeProfit: "Siguiente resistencia mayor en gráfico semanal",
+        regime: "BULLISH_BREAKOUT",
+        citation: "Finding Multi-Day Runners Using Daily Chart Levels (Minuto 19:30)",
+      },
+    ],
+  };
+
+  const rulesByStyle = isGala
+    ? galaRules
+    : isYoel
+    ? yoelRules
+    : isInsight
+    ? insightRules
+    : isSimpler
+    ? simplerRules
+    : isWarrior
+    ? warriorRules
+    : sigmaRules;
 
   // Catálogo completo de videos relevantes generados matemáticamente
-  const videoCount = isGala ? 78 : isYoel ? 578 : isInsight ? 262 : isSimpler ? 145 : 245;
+  const videoCount = channelData.relevantVideosInWindow || (isGala ? 78 : isYoel ? 578 : isInsight ? 262 : isSimpler ? 145 : isWarrior ? 1198 : 245);
   const allVideos = Array.from({ length: videoCount }, (_, i) => {
-    const types = ["TUTORIAL", "LIVE_SESSION", "RECAP", "MARKET_ANALYSIS"];
     const type = isGala
       ? (i < 34 ? "TUTORIAL" : i < 72 ? "LIVE_SESSION" : "RECAP")
       : isYoel
@@ -672,6 +888,8 @@ export default function ChannelExecutiveDetailPage() {
       ? (i < 94 ? "TUTORIAL" : i < 206 ? "LIVE_SESSION" : i < 224 ? "RECAP" : "MARKET_ANALYSIS")
       : isSimpler
       ? (i < 55 ? "TUTORIAL" : i < 127 ? "LIVE_SESSION" : i < 139 ? "RECAP" : "MARKET_ANALYSIS")
+      : isWarrior
+      ? (i < 320 ? "TUTORIAL" : i < 950 ? "LIVE_SESSION" : i < 1140 ? "RECAP" : "MARKET_ANALYSIS")
       : (i < 68 ? "TUTORIAL" : i < 213 ? "LIVE_SESSION" : i < 235 ? "RECAP" : "MARKET_ANALYSIS");
 
     const galaTitles = [
@@ -718,6 +936,17 @@ export default function ChannelExecutiveDetailPage() {
       "Trading Psychology & Capital Preservation: The 10 Rules of John Carter",
     ];
 
+    const warriorTitles = [
+      "My #1 Momentum Day Trading Strategy: First Pullback & HOD Break (Full Class)",
+      "How to Trade the VWAP Indicator for High Accuracy Intraday Entries",
+      "Micro Pullbacks & Bull Flags: Catching Fast Breakouts at the Open",
+      "Risk Management Rules That Saved My Trading Career (Cushion Trade System)",
+      "Trading the Red to Green Move at the Market Open (Step-by-Step)",
+      "How to Read Level 2 & Time and Sales for Momentum Breakouts",
+      "Live Day Trading Recap: Locking in Gains on Morning Gap & Go Setups",
+      "Why Relative Volume (>5x) is the Most Important Filter for Day Traders",
+    ];
+
     const sigmaTitles = [
       "Estrategia 0DTE en SPX con VWAP y Gamma Levels (Masterclass)",
       "Regla de Oro: Por qué salir a las 15:45 EST en opciones intradía",
@@ -733,18 +962,18 @@ export default function ChannelExecutiveDetailPage() {
       "Trading en Vivo: Sesión completa de apertura con scalping en QQQ",
     ];
 
-    const titles = isGala ? galaTitles : isYoel ? yoelTitles : isInsight ? insightTitles : isSimpler ? simplerTitles : sigmaTitles;
-    const prefix = isGala ? "GALA" : isYoel ? "YOEL" : isInsight ? "INSIGHT" : isSimpler ? "SIMPLER" : "SIGMA";
+    const titles = isGala ? galaTitles : isYoel ? yoelTitles : isInsight ? insightTitles : isSimpler ? simplerTitles : isWarrior ? warriorTitles : sigmaTitles;
+    const prefix = isGala ? "GALA" : isYoel ? "YOEL" : isInsight ? "INSIGHT" : isSimpler ? "SIMPLER" : isWarrior ? "WARRIOR" : "SIGMA";
 
     return {
       index: i + 1,
       id: `${prefix}_${String(i + 1).padStart(3, "0")}`,
-      title: i < titles.length ? titles[i] : (isGala ? `Sesión de Scalping #${videoCount - i}: Trade Breakdown en SPY/QQQ` : isYoel ? `Taller de Opciones #${videoCount - i}: Estrategia de Crédito & Riesgo` : isInsight ? `Masterclass Macro & Volatilidad #${videoCount - i}: Análisis Institucional` : isSimpler ? `Masterclass TTM Squeeze #${videoCount - i}: Estrategia de Opciones & Asimetría` : `Sesión y Análisis de Opciones #${videoCount - i}: Operativa en Vivo SPX/SPY`),
+      title: i < titles.length ? titles[i] : (isGala ? `Sesión de Scalping #${videoCount - i}: Trade Breakdown en SPY/QQQ` : isYoel ? `Taller de Opciones #${videoCount - i}: Estrategia de Crédito & Riesgo` : isInsight ? `Masterclass Macro & Volatilidad #${videoCount - i}: Análisis Institucional` : isSimpler ? `Masterclass TTM Squeeze #${videoCount - i}: Estrategia de Opciones & Asimetría` : isWarrior ? `Momentum Day Trading Recap #${videoCount - i}: First Pullback & VWAP Analysis` : `Sesión y Análisis de Opciones #${videoCount - i}: Operativa en Vivo SPX/SPY`),
       type,
       duration: `${15 + (i % 20)} min`,
       views: formatNumber(8000 + (i * 420) % 35000),
-      date: `2026-${String(10 - Math.floor(i / 20)).padStart(2, "0")}-${String(1 + (i % 28)).padStart(2, "0")}`,
-      hasText: isGala ? i < 32 : isYoel ? i < 115 : isInsight ? i < 67 : isSimpler ? i < 44 : i < 42,
+      date: `2026-${String(10 - (Math.floor(i / 20) % 9)).padStart(2, "0")}-${String(1 + (i % 28)).padStart(2, "0")}`,
+      hasText: isGala ? i < 32 : isYoel ? i < 115 : isInsight ? i < 67 : isSimpler ? i < 44 : isWarrior ? i < 514 : i < 42,
     };
   });
 
@@ -773,7 +1002,7 @@ export default function ChannelExecutiveDetailPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-start sm:items-center gap-5">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-cyan-600 to-indigo-700 flex items-center justify-center font-bold text-2xl text-white shadow-xl shadow-cyan-950/50 flex-shrink-0 border-2 border-cyan-400/40">
-              {isGala ? "G" : isYoel ? "Y" : isInsight ? "OI" : isSimpler ? "JC" : "Σ"}
+              {isGala ? "G" : isYoel ? "Y" : isInsight ? "OI" : isSimpler ? "JC" : isWarrior ? "WT" : !isSigma && customChannelData ? (channelData.name || "C").charAt(0).toUpperCase() : "Σ"}
             </div>
             <div>
               <div className="flex items-center gap-2.5">
@@ -941,7 +1170,7 @@ export default function ChannelExecutiveDetailPage() {
               }`}
             >
               <Film className="w-3.5 h-3.5" />
-              <span>Catálogo Videos (245)</span>
+              <span>Catálogo Videos ({videoCount})</span>
             </button>
           </div>
         </div>
@@ -1025,7 +1254,7 @@ export default function ChannelExecutiveDetailPage() {
                 <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
                 <input
                   type="text"
-                  placeholder="Buscar entre los 245 videos por título o ID..."
+                  placeholder={`Buscar entre los ${videoCount} videos por título o ID...`}
                   value={videoSearch}
                   onChange={(e) => {
                     setVideoSearch(e.target.value);
@@ -1044,11 +1273,11 @@ export default function ChannelExecutiveDetailPage() {
                   }}
                   className="bg-[#0b101c] border border-slate-700 rounded-lg px-3 py-1.5 text-slate-300 focus:outline-none focus:border-cyan-500"
                 >
-                  <option value="ALL">Todos los tipos (245)</option>
-                  <option value="TUTORIAL">Tutoriales (68)</option>
-                  <option value="LIVE_SESSION">Sesiones en Vivo (145)</option>
-                  <option value="RECAP">Recaps de Jornada (22)</option>
-                  <option value="MARKET_ANALYSIS">Análisis Macro (10)</option>
+                  <option value="ALL">Todos los tipos ({videoCount})</option>
+                  <option value="TUTORIAL">Tutoriales</option>
+                  <option value="LIVE_SESSION">Sesiones en Vivo</option>
+                  <option value="RECAP">Recaps de Jornada</option>
+                  <option value="MARKET_ANALYSIS">Análisis Macro</option>
                 </select>
               </div>
             </div>

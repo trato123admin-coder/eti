@@ -20,7 +20,7 @@ export default function RulePacksPage() {
 
   const fetchRulePacks = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/eti/v1/rule-packs");
+      const res = await fetch("/api/eti/v1/rule-packs");
       if (res.ok) {
         const data = await res.json();
         const packs = data.rule_packs || [];
