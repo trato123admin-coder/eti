@@ -70,8 +70,8 @@ DEFAULT_NODES: List[Dict[str, Any]] = [
     {"node_code": "FED_HAWKISH_BIAS", "node_name": "Sesgo Restrictivo Sintético de la Fed", "layer": 1, "layer_name": "Monetaria y Liquidez", "category": "MONETARY", "unit": "INDEX", "primary_source": "INTERNAL", "current_value": 0.78, "expected_value": 0.50, "surprise_shock": 0.28, "regime_signal": "BEARISH"},
 
     # Capa 2: Economía Real y Presión de Precios
-    {"node_code": "CPI_HEADLINE", "node_name": "IPC General (CPI YoY)", "layer": 2, "layer_name": "Economía Real", "category": "MACRO_SURPRISE", "unit": "PERCENT", "primary_source": "FRED", "ticker_or_series_id": "CPIAUCSL", "current_value": 3.42, "expected_value": 3.10, "surprise_shock": 0.32, "regime_signal": "BEARISH"},
-    {"node_code": "CPI_SURPRISE", "node_name": "Sorpresa Macro IPC (Actual vs Consenso)", "layer": 2, "layer_name": "Economía Real", "category": "MACRO_SURPRISE", "unit": "PERCENT", "primary_source": "BLS", "current_value": 0.30, "expected_value": 0.00, "surprise_shock": 0.30, "regime_signal": "BEARISH"},
+    {"node_code": "CPI_HEADLINE", "node_name": "IPC General (CPI YoY)", "layer": 2, "layer_name": "Economía Real", "category": "MACRO_SURPRISE", "unit": "PERCENT", "primary_source": "FRED", "ticker_or_series_id": "CPIAUCSL", "current_value": 3.10, "expected_value": 3.10, "surprise_shock": 0.00, "regime_signal": "NEUTRAL"},
+    {"node_code": "CPI_SURPRISE", "node_name": "Sorpresa Macro IPC (Actual vs Consenso)", "layer": 2, "layer_name": "Economía Real", "category": "MACRO_SURPRISE", "unit": "PERCENT", "primary_source": "BLS", "current_value": 0.00, "expected_value": 0.00, "surprise_shock": 0.00, "regime_signal": "NEUTRAL"},
     {"node_code": "PPI_HEADLINE", "node_name": "IPP Precios al Productor (PPI MoM)", "layer": 2, "layer_name": "Economía Real", "category": "MACRO_SURPRISE", "unit": "PERCENT", "primary_source": "BLS", "current_value": 0.50, "expected_value": 0.20, "surprise_shock": 0.30, "regime_signal": "BEARISH"},
     {"node_code": "WTI_OIL", "node_name": "Petróleo Crudo WTI (USO / CL=F)", "layer": 2, "layer_name": "Economía Real", "category": "COMMODITY", "unit": "USD", "primary_source": "YFINANCE", "ticker_or_series_id": "USO", "current_value": 168.83, "expected_value": 160.0, "surprise_shock": 8.83, "regime_signal": "BEARISH"},
     {"node_code": "COPPER_HG", "node_name": "Cobre de Alta Calidad Dr. Copper (CPER)", "layer": 2, "layer_name": "Economía Real", "category": "COMMODITY", "unit": "USD", "primary_source": "YFINANCE", "ticker_or_series_id": "CPER", "current_value": 38.99, "expected_value": 39.50, "surprise_shock": -0.51, "regime_signal": "BEARISH"},
@@ -140,105 +140,209 @@ class FinancialDynamicsEngine:
     def __init__(self):
         self.nodes: Dict[str, Dict[str, Any]] = {n["node_code"]: dict(n) for n in DEFAULT_NODES}
         self.edges: List[Dict[str, Any]] = list(DEFAULT_EDGES)
+        self.news_context: Optional[Dict[str, Any]] = None
+        self.market_snapshot: Dict[str, Dict[str, Any]] = {}
         self.output_cache_path = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "..", "engine", "src", "data", "fde_state.json")
         )
         os.makedirs(os.path.dirname(self.output_cache_path), exist_ok=True)
 
+    @staticmethod
+    def _classify_signal(value: float, threshold_high: float, threshold_low: float, inverse: bool = False) -> str:
+        """Clasifica el régimen del nodo según umbrales; inverse=True implica que valores altos son bajistas para Renta Variable."""
+        if inverse:
+            return "BEARISH" if value >= threshold_high else ("BULLISH" if value <= threshold_low else "NEUTRAL")
+        return "BULLISH" if value >= threshold_high else ("BEARISH" if value <= threshold_low else "NEUTRAL")
+
+    def apply_news_catalysts(self, news_analysis: Optional[Dict[str, Any]]) -> None:
+        """Inyecta catalizadores de noticias en vivo (Finnhub/Reuters) en los nodos de Capa 0 del grafo Forrester."""
+        if not news_analysis:
+            return
+
+        self.news_context = news_analysis
+        hawkish_hits = int(news_analysis.get("hawkish_hits", 0) or 0)
+        dovish_hits = int(news_analysis.get("dovish_hits", 0) or 0)
+        risk_off_hits = int(news_analysis.get("risk_off_hits", 0) or 0)
+        catalysts = news_analysis.get("catalysts_found") or []
+
+        # Calcular presión geopolítica/riesgo exógeno sobre la línea base de 50.0
+        geo_score = min(95.0, max(20.0, 50.0 + risk_off_hits * 12.0 + hawkish_hits * 5.0 - dovish_hits * 6.0))
+        geo_node = self.nodes["GEOPOLITICAL_RISK"]
+        geo_node["previous_value"] = geo_node.get("current_value")
+        geo_node["current_value"] = round(geo_score, 2)
+        geo_node["surprise_shock"] = round(geo_score - float(geo_node["expected_value"]), 2)
+        geo_node["regime_signal"] = self._classify_signal(geo_score, 60.0, 40.0, inverse=True)
+        geo_node["last_updated_at"] = datetime.now(timezone.utc).isoformat()
+
+        # Detectar tensión energética / geopolítica en Medio Oriente o rutas marítimas en los titulares
+        energy_keywords = ("oil", "opec", "crude", "strait", "missile", "iran", "riyadh", "saudi", "houthi", "red sea")
+        tariff_keywords = ("tariff", "trade war", "sanctions", "embargo", "customs")
+        all_headlines = " ".join(str(c.get("headline", "")).lower() for c in catalysts)
+
+        opec_node = self.nodes["OPEC_SUPPLY_POLICY"]
+        if any(kw in all_headlines for kw in energy_keywords):
+            opec_node["current_value"] = 1.0
+            opec_node["regime_signal"] = "BEARISH"
+        else:
+            opec_node["current_value"] = 0.0
+            opec_node["regime_signal"] = "NEUTRAL"
+        opec_node["surprise_shock"] = round(opec_node["current_value"] - float(opec_node["expected_value"]), 2)
+
+        tariff_node = self.nodes["TARIFF_TRADE_WAR"]
+        if any(kw in all_headlines for kw in tariff_keywords):
+            tariff_score = min(85.0, 45.0 + sum(1 for kw in tariff_keywords if kw in all_headlines) * 8.0)
+            tariff_node["current_value"] = round(tariff_score, 2)
+            tariff_node["surprise_shock"] = round(tariff_score - float(tariff_node["expected_value"]), 2)
+            tariff_node["regime_signal"] = self._classify_signal(tariff_score, 50.0, 35.0, inverse=True)
+
     def fetch_live_data(self) -> Dict[str, Any]:
         """Obtiene datos en vivo de FRED, Yahoo Finance y Finnhub."""
         results = {"fred": False, "yfinance": False, "finnhub": False}
+        now_iso = datetime.now(timezone.utc).isoformat()
 
         # 1. FRED Ingestion
         if FRED_API_KEY:
             try:
-                # CPI
-                cpi_url = f"https://api.stlouisfed.org/fred/series/observations?series_id=CPIAUCSL&api_key={FRED_API_KEY}&file_type=json&sort_order=desc&limit=2"
+                # CPIAUCSL entrega el nivel del índice (ej. 337.476). Calculamos el % YoY real con 13+ observaciones.
+                cpi_url = (
+                    f"https://api.stlouisfed.org/fred/series/observations"
+                    f"?series_id=CPIAUCSL&api_key={FRED_API_KEY}&file_type=json&sort_order=desc&limit=15"
+                )
                 r = requests.get(cpi_url, timeout=6)
                 if r.status_code == 200:
-                    obs = r.json().get("observations", [])
-                    if len(obs) >= 2:
-                        val_curr = float(obs[0]["value"])
-                        val_prev = float(obs[1]["value"])
-                        self.nodes["CPI_HEADLINE"]["current_value"] = round(val_curr, 3)
-                        self.nodes["CPI_HEADLINE"]["previous_value"] = round(val_prev, 3)
-                        self.nodes["CPI_HEADLINE"]["last_updated_at"] = datetime.now(timezone.utc).isoformat()
+                    valid_obs = [o for o in r.json().get("observations", []) if o.get("value") not in (None, ".")]
+                    if len(valid_obs) >= 13:
+                        idx_curr = float(valid_obs[0]["value"])
+                        idx_yoy_ago = float(valid_obs[12]["value"])
+                        cpi_yoy = round(((idx_curr - idx_yoy_ago) / idx_yoy_ago) * 100.0, 2)
+                        self.nodes["CPI_HEADLINE"]["current_value"] = cpi_yoy
+                        if len(valid_obs) >= 14:
+                            idx_prev = float(valid_obs[1]["value"])
+                            idx_prev_yoy_ago = float(valid_obs[13]["value"])
+                            self.nodes["CPI_HEADLINE"]["previous_value"] = round(
+                                ((idx_prev - idx_prev_yoy_ago) / idx_prev_yoy_ago) * 100.0, 2
+                            )
+                        self.nodes["CPI_HEADLINE"]["last_updated_at"] = now_iso
 
-                # 10Y Yield
-                y10_url = f"https://api.stlouisfed.org/fred/series/observations?series_id=DGS10&api_key={FRED_API_KEY}&file_type=json&sort_order=desc&limit=1"
-                r = requests.get(y10_url, timeout=6)
-                if r.status_code == 200:
-                    obs = r.json().get("observations", [])
-                    if obs and obs[0]["value"] != ".":
-                        self.nodes["YIELD_10Y"]["current_value"] = round(float(obs[0]["value"]), 2)
+                        cpi_expected = float(self.nodes["CPI_HEADLINE"]["expected_value"])
+                        cpi_surprise = round(cpi_yoy - cpi_expected, 2)
+                        self.nodes["CPI_HEADLINE"]["surprise_shock"] = cpi_surprise
+                        self.nodes["CPI_HEADLINE"]["regime_signal"] = self._classify_signal(cpi_surprise, 0.15, -0.15, inverse=True)
 
-                # 2Y Yield
-                y2_url = f"https://api.stlouisfed.org/fred/series/observations?series_id=DGS2&api_key={FRED_API_KEY}&file_type=json&sort_order=desc&limit=1"
-                r = requests.get(y2_url, timeout=6)
-                if r.status_code == 200:
-                    obs = r.json().get("observations", [])
-                    if obs and obs[0]["value"] != ".":
-                        self.nodes["YIELD_2Y"]["current_value"] = round(float(obs[0]["value"]), 2)
+                        self.nodes["CPI_SURPRISE"]["current_value"] = cpi_surprise
+                        self.nodes["CPI_SURPRISE"]["surprise_shock"] = cpi_surprise
+                        self.nodes["CPI_SURPRISE"]["regime_signal"] = self._classify_signal(cpi_surprise, 0.15, -0.15, inverse=True)
+                        self.nodes["CPI_SURPRISE"]["last_updated_at"] = now_iso
+
+                # 10Y & 2Y Yields
+                for series_id, node_code in [("DGS10", "YIELD_10Y"), ("DGS2", "YIELD_2Y")]:
+                    y_url = (
+                        f"https://api.stlouisfed.org/fred/series/observations"
+                        f"?series_id={series_id}&api_key={FRED_API_KEY}&file_type=json&sort_order=desc&limit=2"
+                    )
+                    ry = requests.get(y_url, timeout=6)
+                    if ry.status_code == 200:
+                        obs = [o for o in ry.json().get("observations", []) if o.get("value") not in (None, ".")]
+                        if obs:
+                            self.nodes[node_code]["current_value"] = round(float(obs[0]["value"]), 2)
+                            if len(obs) >= 2:
+                                self.nodes[node_code]["previous_value"] = round(float(obs[1]["value"]), 2)
+                            self.nodes[node_code]["last_updated_at"] = now_iso
 
                 results["fred"] = True
             except Exception as e:
                 print(f"[WARN] Error consultando FRED: {e}")
 
-        # 2. Yahoo Finance Ingestion (Commodities, Yields, VIX, Currencies)
+        # 2. Yahoo Finance Ingestion (Commodities, Yields, VIX, Currencies, Índices y Sectores)
         try:
-            symbols = ["GLD", "USO", "CPER", "UUP", "^TNX", "^VIX"]
+            symbols = ["GLD", "USO", "CPER", "UUP", "^TNX", "^VIX", "SPY", "QQQ", "^GSPC", "^NDX", "XLK", "SMH", "XLE", "XLF"]
             tickers = yf.Tickers(" ".join(symbols))
+            yf_node_map = {
+                "GLD": "GOLD_XAU",
+                "USO": "WTI_OIL",
+                "CPER": "COPPER_HG",
+                "UUP": "DXY",
+                "^TNX": "YIELD_10Y",
+                "^VIX": "VIX",
+                "XLK": "TECH_SECTOR_XLK",
+                "SMH": "SEMICONDUCTORS_SMH",
+                "XLE": "ENERGY_SECTOR_XLE",
+                "XLF": "FINANCIAL_SECTOR_XLF",
+            }
             for sym in symbols:
                 try:
-                    hist = tickers.tickers[sym].history(period="2d")
-                    if not hist.empty and len(hist) >= 1:
-                        close_curr = float(hist["Close"].iloc[-1])
-                        close_prev = float(hist["Close"].iloc[-2]) if len(hist) >= 2 else close_curr
-                        
-                        if sym == "GLD":
-                            self.nodes["GOLD_XAU"]["current_value"] = round(close_curr, 2)
-                            self.nodes["GOLD_XAU"]["previous_value"] = round(close_prev, 2)
-                        elif sym == "USO":
-                            self.nodes["WTI_OIL"]["current_value"] = round(close_curr, 2)
-                            self.nodes["WTI_OIL"]["previous_value"] = round(close_prev, 2)
-                        elif sym == "CPER":
-                            self.nodes["COPPER_HG"]["current_value"] = round(close_curr, 2)
-                            self.nodes["COPPER_HG"]["previous_value"] = round(close_prev, 2)
-                        elif sym == "UUP":
-                            self.nodes["DXY"]["current_value"] = round(close_curr, 2)
-                            self.nodes["DXY"]["previous_value"] = round(close_prev, 2)
-                        elif sym == "^TNX":
-                            self.nodes["YIELD_10Y"]["current_value"] = round(close_curr, 2)
-                        elif sym == "^VIX":
-                            self.nodes["VIX"]["current_value"] = round(close_curr, 2)
-                            self.nodes["VIX"]["previous_value"] = round(close_prev, 2)
+                    hist = tickers.tickers[sym].history(period="5d", interval="1d")
+                    if hist.empty or len(hist) < 1:
+                        continue
+                    last_row = hist.iloc[-1]
+                    prev_row = hist.iloc[-2] if len(hist) >= 2 else last_row
+                    close_curr = float(last_row["Close"])
+                    close_prev = float(prev_row["Close"])
+                    change_pct = ((close_curr - close_prev) / close_prev * 100.0) if close_prev > 0 else 0.0
+
+                    self.market_snapshot[sym] = {
+                        "symbol": sym,
+                        "date": hist.index[-1].strftime("%Y-%m-%d"),
+                        "prev_date": hist.index[-2].strftime("%Y-%m-%d") if len(hist) >= 2 else hist.index[-1].strftime("%Y-%m-%d"),
+                        "open": round(float(last_row["Open"]), 2),
+                        "high": round(float(last_row["High"]), 2),
+                        "low": round(float(last_row["Low"]), 2),
+                        "price": round(close_curr, 2),
+                        "prev_close": round(close_prev, 2),
+                        "change_pct": round(change_pct, 2),
+                        "volume": int(last_row["Volume"]) if last_row["Volume"] == last_row["Volume"] else 0,
+                    }
+
+                    node_code = yf_node_map.get(sym)
+                    if node_code and node_code in self.nodes:
+                        self.nodes[node_code]["current_value"] = round(close_curr, 2)
+                        self.nodes[node_code]["previous_value"] = round(close_prev, 2)
+                        self.nodes[node_code]["last_updated_at"] = now_iso
                 except Exception:
                     pass
 
+            # Actualizar pendiente de la curva (10Y - 2Y) en bps
+            y10 = self.nodes["YIELD_10Y"]["current_value"]
+            y2 = self.nodes["YIELD_2Y"]["current_value"]
+            if y10 is not None and y2 is not None:
+                spread_bps = round((float(y10) - float(y2)) * 100.0, 1)
+                self.nodes["YIELD_CURVE_10_2"]["current_value"] = spread_bps
+                self.nodes["YIELD_CURVE_10_2"]["last_updated_at"] = now_iso
+
             # Calcular Copper / Gold Ratio sintetizado
-            gld_val = self.nodes["GOLD_XAU"]["current_value"] or 355.0
-            cper_val = self.nodes["COPPER_HG"]["current_value"] or 39.0
-            if gld_val > 0:
-                cu_au = round(cper_val / gld_val, 4)
+            gld_val = self.nodes["GOLD_XAU"]["current_value"]
+            cper_val = self.nodes["COPPER_HG"]["current_value"]
+            if gld_val and cper_val and float(gld_val) > 0:
+                cu_au = round(float(cper_val) / float(gld_val), 4)
                 self.nodes["COPPER_GOLD_RATIO"]["current_value"] = cu_au
-                self.nodes["COPPER_GOLD_RATIO"]["surprise_shock"] = round(cu_au - (self.nodes["COPPER_GOLD_RATIO"]["expected_value"] or 0.11), 4)
+                self.nodes["COPPER_GOLD_RATIO"]["surprise_shock"] = round(
+                    cu_au - float(self.nodes["COPPER_GOLD_RATIO"]["expected_value"]), 4
+                )
+                self.nodes["COPPER_GOLD_RATIO"]["last_updated_at"] = now_iso
 
             results["yfinance"] = True
         except Exception as e:
             print(f"[WARN] Error consultando yfinance: {e}")
 
-        # 3. Finnhub Ingestion (Quotes sectoriales y SPY)
+        # 3. Finnhub Ingestion (Quotes sectoriales en tiempo real como refinamiento intradía)
         if FINNHUB_API_KEY:
             try:
-                for sym, node_code in [("XLK", "TECH_SECTOR_XLK"), ("XLE", "ENERGY_SECTOR_XLE"), ("XLF", "FINANCIAL_SECTOR_XLF")]:
+                for sym, node_code in [
+                    ("XLK", "TECH_SECTOR_XLK"),
+                    ("XLE", "ENERGY_SECTOR_XLE"),
+                    ("XLF", "FINANCIAL_SECTOR_XLF"),
+                    ("SMH", "SEMICONDUCTORS_SMH"),
+                ]:
                     url = f"https://finnhub.io/api/v1/quote?symbol={sym}&token={FINNHUB_API_KEY}"
                     r = requests.get(url, timeout=5)
                     if r.status_code == 200:
                         data = r.json()
                         if data.get("c"):
-                            self.nodes[node_code]["current_value"] = round(float(data["c"]), 2)
-                            self.nodes[node_code]["previous_value"] = round(float(data["pc"]), 2)
-                            self.nodes[node_code]["surprise_shock"] = round(float(data["d"]), 2)
+                            curr_p = round(float(data["c"]), 2)
+                            prev_p = round(float(data["pc"]), 2) if data.get("pc") else curr_p
+                            self.nodes[node_code]["current_value"] = curr_p
+                            self.nodes[node_code]["previous_value"] = prev_p
+                            self.nodes[node_code]["last_updated_at"] = now_iso
                 results["finnhub"] = True
             except Exception as e:
                 print(f"[WARN] Error consultando Finnhub: {e}")
@@ -248,48 +352,76 @@ class FinancialDynamicsEngine:
     def propagate_causal_shocks(self) -> Dict[str, Any]:
         """
         Ejecuta el algoritmo de propagación multicapa con decaimiento exponencial:
-        I(t) = Shock * Weight * exp(-lambda * t)
+        I(t) = NormalizedShock * Weight * exp(-lambda * t)
         """
-        # 1. Determinar choques iniciales en Capas 0, 1 y 2
+        # 1. Determinar choques iniciales reales (respetando expected_value == 0.0 con `is not None`)
         shocks: Dict[str, float] = {}
+        normalized_shocks: Dict[str, float] = {}
         for code, node in self.nodes.items():
-            curr = node.get("current_value") or 0.0
-            exp = node.get("expected_value") or curr
+            curr_raw = node.get("current_value")
+            curr = float(curr_raw) if curr_raw is not None else 0.0
+            exp_raw = node.get("expected_value")
+            exp = float(exp_raw) if exp_raw is not None else curr
             shock = curr - exp
             node["surprise_shock"] = round(shock, 4)
             shocks[code] = shock
 
+            # Normalización por escala para evitar que nodos en miles de millones (NET_LIQUIDITY) o K (NFP) dominen linealmente
+            unit = node.get("unit", "")
+            if unit in ("USD", "POINTS", "INDEX", "BPS") and abs(exp) > 10.0:
+                normalized_shocks[code] = max(-3.0, min(3.0, (shock / abs(exp)) * 10.0))
+            elif unit == "RATIO" and abs(exp) > 0:
+                normalized_shocks[code] = max(-3.0, min(3.0, (shock / abs(exp)) * 10.0))
+            else:
+                normalized_shocks[code] = max(-5.0, min(5.0, shock))
+
         # 2. Propagación en cascada siguiendo las aristas ordenadas por capa origen
         sorted_edges = sorted(self.edges, key=lambda e: self.nodes.get(e["source_node_code"], {}).get("layer", 0))
-        
         cumulative_impacts: Dict[str, float] = {code: 0.0 for code in self.nodes}
 
         for edge in sorted_edges:
             src = edge["source_node_code"]
             tgt = edge["target_node_code"]
-            w = edge.get("weight", 0.5)
-            lam = edge.get("decay_lambda", 0.1)
-            lag = edge.get("lag_seconds", 0)
+            w = float(edge.get("weight", 0.5))
+            lam = float(edge.get("decay_lambda", 0.1))
+            lag = float(edge.get("lag_seconds", 0))
 
-            # Efecto atenuado por retardo
             decay_factor = math.exp(-lam * (lag / 3600.0))
-            source_force = shocks.get(src, 0.0) + (cumulative_impacts.get(src, 0.0) * 0.5)
-            
-            # Impacto transmitido
+            source_force = normalized_shocks.get(src, 0.0) + (cumulative_impacts.get(src, 0.0) * 0.5)
             transmitted = source_force * w * decay_factor
             cumulative_impacts[tgt] += transmitted
 
-        # 3. Actualizar señales de régimen para los nodos de ejecución final
-        # SPX_0DTE_PUT_MOMENTUM
-        put_score = cumulative_impacts.get("SPX_0DTE_PUT_MOMENTUM", 0.0)
-        cpi_shock = self.nodes.get("CPI_SURPRISE", {}).get("surprise_shock", 0.0)
-        vix_val = self.nodes.get("VIX", {}).get("current_value", 15.0)
+        # 3. Actualizar GEX_GAMMA_REGIME de manera dinámica en función del VIX y su impacto acumulado
+        vix_val = float(self.nodes.get("VIX", {}).get("current_value") or 15.0)
+        gex_delta = cumulative_impacts.get("GEX_GAMMA_REGIME", 0.0)
+        # Cuando VIX supera 18.0, la gamma neta se vuelve negativa; bajo 16.0 tiende a positiva
+        gex_est = round(max(-3.5, min(2.5, (17.5 - vix_val) * 0.45 + gex_delta * 0.15)), 2)
+        self.nodes["GEX_GAMMA_REGIME"]["current_value"] = gex_est
+        self.nodes["GEX_GAMMA_REGIME"]["surprise_shock"] = round(
+            gex_est - float(self.nodes["GEX_GAMMA_REGIME"]["expected_value"]), 2
+        )
+        self.nodes["GEX_GAMMA_REGIME"]["regime_signal"] = (
+            "EXTREME_VOLATILITY" if gex_est <= -1.2 else ("BEARISH" if gex_est < 0 else "BULLISH")
+        )
 
-        # Si hay sorpresa alcista de inflación y VIX elevado, PUT momentum se dispara (Caso Yoel Sardiñas)
-        if cpi_shock > 0.15 or vix_val > 18.0:
-            final_put_momentum = min(0.98, max(0.65, 0.50 + abs(put_score) * 0.15))
-            final_call_momentum = round(1.0 - final_put_momentum, 2)
-            final_condor = 0.18  # Riesgo de gap, desfavorable para Iron Condors
+        # 4. Actualizar señales de régimen para los nodos de ejecución final (Capa 5)
+        put_score = cumulative_impacts.get("SPX_0DTE_PUT_MOMENTUM", 0.0)
+        cpi_shock = float(self.nodes.get("CPI_SURPRISE", {}).get("surprise_shock") or 0.0)
+        yield10 = float(self.nodes.get("YIELD_10Y", {}).get("current_value") or 4.50)
+        geo_shock = float(self.nodes.get("GEOPOLITICAL_RISK", {}).get("surprise_shock") or 0.0)
+
+        bearish_drivers = (
+            cpi_shock > 0.15
+            or vix_val > 18.0
+            or yield10 >= 4.75
+            or (geo_shock >= 15.0 and put_score > 0.2)
+        )
+
+        if bearish_drivers:
+            raw_put = 0.52 + min(0.45, max(0.0, put_score) * 0.08 + max(0.0, vix_val - 17.5) * 0.04 + max(0.0, yield10 - 4.75) * 0.20)
+            final_put_momentum = min(0.98, max(0.60, raw_put))
+            final_call_momentum = round(max(0.02, 1.0 - final_put_momentum), 2)
+            final_condor = round(max(0.10, 0.35 - max(0.0, vix_val - 18.0) * 0.04), 2)
         else:
             final_put_momentum = 0.35
             final_call_momentum = 0.45
@@ -303,13 +435,29 @@ class FinancialDynamicsEngine:
 
     def compute_system_state(self) -> Dict[str, Any]:
         """
-        Determina el Financial System State (FSS), régimen macro, índice de coherencia y veredicto de Aduana.
+        Determina el Financial System State (FSS), régimen macro, índice de coherencia y veredicto de Aduana,
+        construyendo explicaciones y cadena de transmisión 100% dinámicas con los datos reales en vivo.
         """
-        cpi_shock = self.nodes.get("CPI_SURPRISE", {}).get("surprise_shock", 0.0)
-        vix = self.nodes.get("VIX", {}).get("current_value", 15.0)
-        yield10 = self.nodes.get("YIELD_10Y", {}).get("current_value", 4.50)
-        put_momentum = self.nodes.get("SPX_0DTE_PUT_MOMENTUM", {}).get("current_value", 0.5)
-        condor_viability = self.nodes.get("SPX_IRON_CONDOR_VIABILITY", {}).get("current_value", 0.5)
+        cpi_headline = float(self.nodes.get("CPI_HEADLINE", {}).get("current_value") or 3.10)
+        cpi_shock = float(self.nodes.get("CPI_SURPRISE", {}).get("surprise_shock") or 0.0)
+        vix = float(self.nodes.get("VIX", {}).get("current_value") or 15.0)
+        vix_prev = float(self.nodes.get("VIX", {}).get("previous_value") or vix)
+        vix_delta = round(vix - vix_prev, 2)
+        yield10 = float(self.nodes.get("YIELD_10Y", {}).get("current_value") or 4.50)
+        yield2 = float(self.nodes.get("YIELD_2Y", {}).get("current_value") or 4.25)
+        wti_oil = float(self.nodes.get("WTI_OIL", {}).get("current_value") or 145.0)
+        gold_val = float(self.nodes.get("GOLD_XAU", {}).get("current_value") or 355.0)
+        cper_val = float(self.nodes.get("COPPER_HG", {}).get("current_value") or 36.5)
+        cu_au_ratio = float(self.nodes.get("COPPER_GOLD_RATIO", {}).get("current_value") or 0.105)
+        dxy_val = float(self.nodes.get("DXY", {}).get("current_value") or 29.0)
+        gex_val = float(self.nodes.get("GEX_GAMMA_REGIME", {}).get("current_value") or 0.0)
+        geo_val = float(self.nodes.get("GEOPOLITICAL_RISK", {}).get("current_value") or 50.0)
+        geo_shock = float(self.nodes.get("GEOPOLITICAL_RISK", {}).get("surprise_shock") or 0.0)
+        condor_viability = float(self.nodes.get("SPX_IRON_CONDOR_VIABILITY", {}).get("current_value") or 0.5)
+
+        news_sentiment = (self.news_context or {}).get("sentiment", "NEUTRAL")
+        catalysts = (self.news_context or {}).get("catalysts_found") or []
+        top_headline = catalysts[0]["headline"] if catalysts else "Sin choques exógenos críticos en titulares recientes"
 
         # Determinar régimen macro y coherencia
         if cpi_shock > 0.15:
@@ -322,20 +470,23 @@ class FinancialDynamicsEngine:
             coherence = 0.94
             shock_intensity = 0.88
             summary_text = (
-                f"Choque inflacionario confirmado (+{cpi_shock:.2f}% sobre consenso). "
+                f"Choque inflacionario confirmado (CPI YoY {cpi_headline:.2f}%, sorpresa {cpi_shock:+.2f}% sobre consenso). "
                 f"Rendimiento 10Y en {yield10:.2f}% y VIX en {vix:.2f}. "
-                "Estructura alineada con el playbook de ruptura de Yoel Sardiñas: comprar PUTs 0DTE en apertura tras fallo en resistencia."
+                "Estructura alineada con el playbook de ruptura de Yoel Sardiñas: comprar PUTs 0DTE en apertura tras fallo en VWAP/resistencia."
             )
-        elif vix > 22.0:
+        elif vix > 22.0 or (geo_shock >= 20.0 and vix >= 19.5):
             regime = "LIQUIDITY_SHOCK"
             bias = "CHOPPY_VOLATILE"
             expected_action = "PUT_MOMENTUM_BREAKDOWN"
-            primary_driver = "VIX"
+            primary_driver = "GEOPOLITICAL_RISK" if geo_shock >= 20.0 else "VIX"
             recommended_strategy = "YOEL_CPI_VOLATILITY_BREAKDOWN_PUT"
             aduana_gate = "ALLOW_PUTS_ONLY"
             coherence = 0.89
-            shock_intensity = 0.79
-            summary_text = f"Pánico de volatilidad (VIX {vix:.2f}). Mercado en régimen de Gamma Negativa. Se prohíben estrategias vendedoras de prima."
+            shock_intensity = 0.82
+            summary_text = (
+                f"Shock de volatilidad/riesgo exógeno (VIX en {vix:.2f}, Riesgo Geopolítico {geo_val:.0f}/100, 10Y en {yield10:.2f}%). "
+                f"Mercado en régimen de Gamma Negativa (GEX {gex_val:+.2f}). Se prohíben estrategias vendedoras de prima."
+            )
         elif yield10 >= 4.75:
             regime = "DECELERATION"
             bias = "BEARISH"
@@ -343,11 +494,12 @@ class FinancialDynamicsEngine:
             primary_driver = "YIELD_10Y"
             recommended_strategy = "YOEL_CPI_VOLATILITY_BREAKDOWN_PUT"
             aduana_gate = "ALLOW_PUTS_ONLY"
-            coherence = 0.88
-            shock_intensity = 0.72
+            coherence = 0.90 if geo_shock > 10.0 else 0.88
+            shock_intensity = 0.76 if geo_shock > 10.0 else 0.72
+            geo_note = f" Presión geopolítica adicional ({news_sentiment}, índice {geo_val:.0f}/100)." if geo_shock > 5.0 else ""
             summary_text = (
                 f"Presión sostenida por tasas de interés (Treasury 10Y en {yield10:.2f}% y VIX en {vix:.2f}). "
-                "Costo de capital restrictivo castiga múltiplos de crecimiento y mega-caps tecnológicas. "
+                f"Costo de capital restrictivo castiga múltiplos de crecimiento y mega-caps tecnológicas (Nasdaq/XLK).{geo_note} "
                 "Sesgo bajista: monitorear rebotes débiles hacia VWAP para buscar continuaciones en PUT 0DTE."
             )
         elif condor_viability >= 0.70:
@@ -359,7 +511,10 @@ class FinancialDynamicsEngine:
             aduana_gate = "ALLOW_NEUTRAL_ONLY"
             coherence = 0.82
             shock_intensity = 0.20
-            summary_text = "Macro en equilibrio y volatilidad contenida. Mercado apto para captura de Theta (Iron Condors de Opción Sigma)."
+            summary_text = (
+                f"Macro en equilibrio (10Y en {yield10:.2f}%, VIX en {vix:.2f} y GEX {gex_val:+.2f}). "
+                "Mercado apto para captura de Theta (Iron Condors de Opción Sigma)."
+            )
         else:
             regime = "EXPANSION"
             bias = "BULLISH"
@@ -369,7 +524,21 @@ class FinancialDynamicsEngine:
             aduana_gate = "ALLOW_CALLS_ONLY"
             coherence = 0.75
             shock_intensity = 0.40
-            summary_text = "Liquidez positiva impulsando activos de riesgo. Sesgo alcista hacia activos de beta alto."
+            summary_text = (
+                f"Condiciones financieras favorables (10Y en {yield10:.2f}%, VIX en {vix:.2f}) impulsando activos de riesgo. "
+                "Sesgo alcista hacia activos de beta alto."
+            )
+
+        now_est_str = datetime.now(timezone.utc).strftime("%H:%M UTC")
+        xlk_snap = self.market_snapshot.get("XLK", {})
+        smh_snap = self.market_snapshot.get("SMH", {})
+        xlk_chg = xlk_snap.get("change_pct")
+        smh_chg = smh_snap.get("change_pct")
+        sector_text = (
+            f"Castigo en Tecnología (XLK {xlk_chg:+.2f}%) y Semiconductores (SMH {smh_chg:+.2f}%)"
+            if xlk_chg is not None and smh_chg is not None
+            else f"Presión por tasa de descuento sobre Tecnología (XLK ${self.nodes['TECH_SECTOR_XLK']['current_value']:.2f})"
+        )
 
         system_state = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -383,31 +552,62 @@ class FinancialDynamicsEngine:
             "aduana_gate_action": aduana_gate,
             "summary_text": summary_text,
             "top_variables": [
-                {"code": "CPI_SURPRISE", "name": "Sorpresa Macro IPC", "value": f"+{cpi_shock:.2f}%", "bias": "BEARISH"},
-                {"code": "YIELD_10Y", "name": "Treasury 10Y", "value": f"{yield10:.2f}%", "bias": "BEARISH"},
-                {"code": "VIX", "name": "Índice VIX", "value": f"{vix:.2f}", "bias": "BEARISH" if vix > 17 else "NEUTRAL"},
-                {"code": "WTI_OIL", "name": "Petróleo WTI (USO)", "value": f"${self.nodes['WTI_OIL']['current_value']:.2f}", "bias": "BEARISH"},
-                {"code": "GOLD_XAU", "name": "Oro Spot (GLD)", "value": f"${self.nodes['GOLD_XAU']['current_value']:.2f}", "bias": "BULLISH"}
+                {"code": "YIELD_10Y", "name": "Treasury 10Y (^TNX)", "value": f"{yield10:.2f}%", "bias": "BEARISH" if yield10 >= 4.75 else "NEUTRAL"},
+                {"code": "VIX", "name": "Índice VIX", "value": f"{vix:.2f} ({vix_delta:+.2f})", "bias": "BEARISH" if vix > 17.5 else "NEUTRAL"},
+                {"code": "CPI_SURPRISE", "name": f"CPI YoY ({cpi_headline:.2f}%)", "value": f"{cpi_shock:+.2f}%", "bias": "BEARISH" if cpi_shock > 0.1 else ("BULLISH" if cpi_shock < -0.1 else "NEUTRAL")},
+                {"code": "GEOPOLITICAL_RISK", "name": "Riesgo Geopolítico / Noticias", "value": f"{geo_val:.0f}/100 ({news_sentiment})", "bias": "BEARISH" if geo_val >= 60 else "NEUTRAL"},
+                {"code": "COPPER_GOLD_RATIO", "name": "Ratio Cobre/Oro (CPER/GLD)", "value": f"{cu_au_ratio:.4f}", "bias": "BEARISH" if cu_au_ratio < 0.11 else "BULLISH"},
+                {"code": "WTI_OIL", "name": "Petróleo WTI (USO)", "value": f"${wti_oil:.2f}", "bias": "BEARISH" if wti_oil > 160 else "NEUTRAL"},
+                {"code": "GOLD_XAU", "name": "Oro Spot (GLD)", "value": f"${gold_val:.2f}", "bias": "BULLISH"},
             ],
             "causal_transmission_chain": [
-                {"step": 1, "time": "08:30 EST", "event": "Publicación CPI Shock (+0.30% sobre esperado)", "layer": "Capa 2: Economía Real"},
-                {"step": 2, "time": "08:35 EST", "event": "Revalorización agresiva de Yields (10Y sube a 4.93%)", "layer": "Capa 1: Monetaria"},
-                {"step": 3, "time": "09:00 EST", "event": "Transmisión a VIX (+3.9 pts) y descompresión de GEX a zona negativa", "layer": "Capa 3: Transmisores"},
-                {"step": 4, "time": "09:25 EST", "event": "Evaluación ADUANA O-13: Autorizado comprar PUTs 0DTE de momentum", "layer": "Aduana Robot"},
-                {"step": 5, "time": "09:35 EST", "event": "Ejecución óptima Yoel Sardiñas: Entrada en PUTs 0DTE tras rebote fallido", "layer": "Capa 5: Micro-Ejecución"}
-            ]
+                {
+                    "step": 1,
+                    "time": now_est_str,
+                    "event": f"Capa 0/2 (Catalizador): Riesgo Geopolítico {geo_val:.0f}/100 ({top_headline[:72]}) | CPI YoY {cpi_headline:.2f}% ({cpi_shock:+.2f}% vs exp.)",
+                    "layer": "Capa 0 & 2: Shocks Exógenos / Economía Real",
+                },
+                {
+                    "step": 2,
+                    "time": now_est_str,
+                    "event": f"Capa 1 (Monetaria): Treasury 10Y en {yield10:.2f}% (2Y en {yield2:.2f}%, Curva {(yield10 - yield2) * 100:+.0f} bps) y DXY Proxy (UUP) en ${dxy_val:.2f}",
+                    "layer": "Capa 1: Monetaria",
+                },
+                {
+                    "step": 3,
+                    "time": now_est_str,
+                    "event": f"Capa 3 (Transmisores): VIX en {vix:.2f} ({vix_delta:+.2f}), Ratio Cobre/Oro en {cu_au_ratio:.4f} (CPER ${cper_val:.2f}) y GEX estimado en {gex_val:+.2f}",
+                    "layer": "Capa 3: Transmisores",
+                },
+                {
+                    "step": 4,
+                    "time": "09:20 EST",
+                    "event": f"Capa 4 & Aduana O-13: {sector_text}. Veredicto: {aduana_gate}",
+                    "layer": "Capa 4 & Aduana Robot",
+                },
+                {
+                    "step": 5,
+                    "time": "09:35 EST",
+                    "event": f"Capa 5 (Ejecución): {recommended_strategy} — {'Entrada PUT 0DTE tras fallo en rebote a VWAP' if bias in ('BEARISH', 'CHOPPY_VOLATILE') else 'Operar según confirmación de VWAP'}",
+                    "layer": "Capa 5: Micro-Ejecución",
+                },
+            ],
         }
 
         return system_state
 
-    def run_full_pipeline(self) -> Dict[str, Any]:
-        """Ejecuta todo el ciclo del FDE: ingesta -> propagación -> diagnóstico -> guardado."""
+    def run_full_pipeline(self, news_analysis: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Ejecuta todo el ciclo del FDE: ingesta -> noticias -> propagación -> diagnóstico -> guardado."""
         print("[1/5] Ingestando datos de mercado (FRED, Yahoo Finance, Finnhub)...")
         fetch_status = self.fetch_live_data()
         print(f"      Estado fuentes: {fetch_status}")
 
+        if news_analysis:
+            print("[1.5/5] Aplicando catalizadores de noticias en vivo a Capa 0...")
+            self.apply_news_catalysts(news_analysis)
+
         print("[2/5] Propagando choques causales a través del grafo de 6 capas...")
-        impacts = self.propagate_causal_shocks()
+        self.propagate_causal_shocks()
         print(f"      Impacto calculado en SPX PUT Momentum: {self.nodes['SPX_0DTE_PUT_MOMENTUM']['current_value']}")
 
         print("[3/5] Sintetizando Financial System State y veredicto de ADUANA...")
@@ -422,6 +622,8 @@ class FinancialDynamicsEngine:
             "fss": system_state,
             "nodes": list(self.nodes.values()),
             "edges": self.edges,
+            "market_snapshot": self.market_snapshot,
+            "news_context": self.news_context,
             "empirical_calibration": {
                 "influencer": "Yoel Sardiñas",
                 "reference_trade": "SPX PUT 0DTE (Video -AoEkd22MtU / CPI Breakdown)",

@@ -49,20 +49,29 @@ class MacroNewsAnalyzer:
 
     @classmethod
     def analyze_finnhub_news(cls) -> Dict[str, Any]:
+        fallback = {
+            "sentiment": "NEUTRAL",
+            "hawkish_hits": 0,
+            "dovish_hits": 0,
+            "risk_off_hits": 0,
+            "hawkish_ratio": 0.5,
+            "catalysts_found": []
+        }
         if not FINNHUB_API_KEY:
-            return {"sentiment": "NEUTRAL", "hawkish_score": 0.5, "catalysts_found": []}
+            return fallback
 
         try:
             url = f"https://finnhub.io/api/v1/news?category=general&token={FINNHUB_API_KEY}"
             r = requests.get(url, timeout=7)
             if r.status_code != 200:
-                return {"sentiment": "NEUTRAL", "hawkish_score": 0.5, "catalysts_found": []}
+                return fallback
 
             items = r.json()[:40] # Analizar los últimos 40 titulares
             hawkish_hits = 0
             dovish_hits = 0
             risk_off_hits = 0
             detected_catalysts = []
+            est_tz = timezone(timedelta(hours=-5))
 
             for item in items:
                 headline = item.get("headline", "").lower()
@@ -83,7 +92,7 @@ class MacroNewsAnalyzer:
                     detected_catalysts.append({
                         "headline": item.get("headline"),
                         "source": source,
-                        "time": datetime.fromtimestamp(item.get("datetime", time.time()), timezone.utc).strftime("%H:%M EST"),
+                        "time": datetime.fromtimestamp(item.get("datetime", time.time()), est_tz).strftime("%H:%M EST"),
                         "tone": "HAWKISH / RISK-OFF"
                     })
 
@@ -91,9 +100,9 @@ class MacroNewsAnalyzer:
             hawkish_ratio = hawkish_hits / total_hits
 
             sentiment = "NEUTRAL"
-            if hawkish_ratio > 0.65 or risk_off_hits >= 3:
+            if hawkish_ratio > 0.65 or risk_off_hits >= 3 or (hawkish_hits + risk_off_hits >= 4 and dovish_hits == 0):
                 sentiment = "BEARISH_PRESSURE"
-            elif hawkish_ratio < 0.35:
+            elif hawkish_ratio < 0.35 and dovish_hits > 0:
                 sentiment = "BULLISH_TAILWIND"
 
             return {
@@ -106,7 +115,7 @@ class MacroNewsAnalyzer:
             }
         except Exception as e:
             print(f"[WARN] Error analizando noticias Finnhub: {e}")
-            return {"sentiment": "NEUTRAL", "hawkish_score": 0.5, "catalysts_found": []}
+            return fallback
 
 
 class PreMarketScheduler:
@@ -131,27 +140,40 @@ class PreMarketScheduler:
         print(f"  * Sentimiento Noticias: {news_analysis['sentiment']} (Hawkish ratio: {news_analysis.get('hawkish_ratio', 0.5)})")
         print(f"  * Alertas detectadas: {len(news_analysis['catalysts_found'])} titulares relevantes")
 
-        # 2. Ingesta de Datos y Propagación en el Grafo Causal FDE
-        print("\n[FASE 2 - 8:30 EST] Ejecutando Motor Causal FDE (FRED, Commodities, Yields)...")
-        fde_result = self.engine.run_full_pipeline()
+        # 2. Ingesta de Datos y Propagación en el Grafo Causal FDE (con catalizadores de noticias inyectados)
+        print("\n[FASE 2 - 8:30 EST] Ejecutando Motor Causal FDE (FRED, Commodities, Yields, Noticias Capa 0)...")
+        fde_result = self.engine.run_full_pipeline(news_analysis=news_analysis)
         fss = fde_result["fss"]
 
         # 3. Síntesis de la Postura de Aduana O-13 para el Robot
         print("\n[FASE 3 - 9:20 EST] Generando Mandato de ADUANA O-13 para Robot eTrade...")
+        bias = fss["directional_bias"]
+        if bias in ("BEARISH", "CHOPPY_VOLATILE"):
+            tactical_plan = (
+                "Monitorear primeros 5 a 10 minutos de apertura (9:30-9:40 AM EST). "
+                "Si el precio abre o rebota débil hacia VWAP y confirma rechazo en resistencia, ejecutar señal de Yoel Sardiñas (PUT 0DTE ATM). "
+                "En caso de reclamo sólido sobre VWAP/EMA 20, la orden queda invalidada por Aduana O-13."
+            )
+        elif bias == "BULLISH":
+            tactical_plan = (
+                "Monitorear primeros 5 a 10 minutos de apertura (9:30-9:40 AM EST). "
+                "Si el precio consolida sobre VWAP con cruce alcista EMA 9 > EMA 20, habilitar compras de CALL 0DTE (Carter)."
+            )
+        else:
+            tactical_plan = (
+                "Esperar estabilización de los primeros 45 minutos (10:15 AM EST) y validar muros GEX antes de vender prima (Iron Condor Opción Sigma)."
+            )
+
         robot_mandate = {
             "evaluation_time_est": now_est.strftime("%H:%M:%S EST"),
             "macro_regime": fss["macro_regime"],
-            "bias": fss["directional_bias"],
+            "bias": bias,
             "aduana_gate": fss["aduana_gate_action"],
             "primary_playbook": fss["recommended_strategy"],
             "coherence_index_pct": round(fss["system_coherence_index"] * 100, 1),
-            "allowed_underlying": ["SPX", "SPY"] if fss["directional_bias"] == "BEARISH" else ["SPX", "QQQ"],
+            "allowed_underlying": ["SPX", "SPY", "QQQ"] if bias in ("BEARISH", "CHOPPY_VOLATILE") else ["SPX", "QQQ"],
             "execution_allowed": False, # Guardrail obligatorio
-            "opening_tactical_plan": (
-                "Monitorear primeros 5 minutos de apertura (9:30-9:35 AM). "
-                "Si precio abre bajo VWAP y falla el primer rebote en resistencia, ejecutar señal de Yoel Sardiñas (PUT 0DTE ATM). "
-                "En caso de rebote sólido sobre VWAP, la orden queda invalidada por Aduana O-13."
-            )
+            "opening_tactical_plan": tactical_plan
         }
         print(f"  * Régimen Final: {robot_mandate['macro_regime']} | Sesgo: {robot_mandate['bias']}")
         print(f"  * Puerta Aduana: {robot_mandate['aduana_gate']} | Playbook: {robot_mandate['primary_playbook']}")

@@ -1,41 +1,53 @@
 {
   "success": true,
-  "generated_at": "2026-11-15T00:13:06.543688+00:00",
+  "generated_at": "2026-11-16T05:05:29.673212+00:00",
   "fss": {
-    "timestamp": "2026-11-15T00:13:06.543688+00:00",
-    "macro_regime": "DECELERATION",
-    "system_coherence_index": 0.88,
+    "timestamp": "2026-11-16T05:05:29.673212+00:00",
+    "macro_regime": "INFLATION_SURPRISE",
+    "system_coherence_index": 0.94,
     "directional_bias": "BEARISH",
     "expected_spx_open_action": "PUT_MOMENTUM_BREAKDOWN",
-    "primary_driver_node": "YIELD_10Y",
-    "shock_intensity": 0.72,
+    "primary_driver_node": "CPI_SURPRISE",
+    "shock_intensity": 0.88,
     "recommended_strategy": "YOEL_CPI_VOLATILITY_BREAKDOWN_PUT",
     "aduana_gate_action": "ALLOW_PUTS_ONLY",
-    "summary_text": "Presión sostenida por tasas de interés (Treasury 10Y en 5.15% y VIX en 19.30). Costo de capital restrictivo castiga múltiplos de crecimiento y mega-caps tecnológicas. Sesgo bajista: monitorear rebotes débiles hacia VWAP para buscar continuaciones en PUT 0DTE.",
+    "summary_text": "Choque inflacionario confirmado (CPI YoY 4.08%, sorpresa +0.98% sobre consenso). Rendimiento 10Y en 5.15% y VIX en 19.30. Estructura alineada con el playbook de ruptura de Yoel Sardiñas: comprar PUTs 0DTE en apertura tras fallo en VWAP/resistencia.",
     "top_variables": [
       {
-        "code": "CPI_SURPRISE",
-        "name": "Sorpresa Macro IPC",
-        "value": "+0.00%",
-        "bias": "BEARISH"
-      },
-      {
         "code": "YIELD_10Y",
-        "name": "Treasury 10Y",
+        "name": "Treasury 10Y (^TNX)",
         "value": "5.15%",
         "bias": "BEARISH"
       },
       {
         "code": "VIX",
         "name": "Índice VIX",
-        "value": "19.30",
+        "value": "19.30 (+0.60)",
+        "bias": "BEARISH"
+      },
+      {
+        "code": "CPI_SURPRISE",
+        "name": "CPI YoY (4.08%)",
+        "value": "+0.98%",
+        "bias": "BEARISH"
+      },
+      {
+        "code": "GEOPOLITICAL_RISK",
+        "name": "Riesgo Geopolítico / Noticias",
+        "value": "94/100 (BEARISH_PRESSURE)",
+        "bias": "BEARISH"
+      },
+      {
+        "code": "COPPER_GOLD_RATIO",
+        "name": "Ratio Cobre/Oro (CPER/GLD)",
+        "value": "0.1028",
         "bias": "BEARISH"
       },
       {
         "code": "WTI_OIL",
         "name": "Petróleo WTI (USO)",
         "value": "$145.58",
-        "bias": "BEARISH"
+        "bias": "NEUTRAL"
       },
       {
         "code": "GOLD_XAU",
@@ -47,32 +59,32 @@
     "causal_transmission_chain": [
       {
         "step": 1,
-        "time": "08:30 EST",
-        "event": "Publicación CPI Shock (+0.30% sobre esperado)",
-        "layer": "Capa 2: Economía Real"
+        "time": "05:05 UTC",
+        "event": "Capa 0/2 (Catalizador): Riesgo Geopolítico 94/100 (Yemen's Houthis say they launched ballistic missiles towards Riyadh airp) | CPI YoY 4.08% (+0.98% vs exp.)",
+        "layer": "Capa 0 & 2: Shocks Exógenos / Economía Real"
       },
       {
         "step": 2,
-        "time": "08:35 EST",
-        "event": "Revalorización agresiva de Yields (10Y sube a 4.93%)",
+        "time": "05:05 UTC",
+        "event": "Capa 1 (Monetaria): Treasury 10Y en 5.15% (2Y en 4.86%, Curva +29 bps) y DXY Proxy (UUP) en $29.50",
         "layer": "Capa 1: Monetaria"
       },
       {
         "step": 3,
-        "time": "09:00 EST",
-        "event": "Transmisión a VIX (+3.9 pts) y descompresión de GEX a zona negativa",
+        "time": "05:05 UTC",
+        "event": "Capa 3 (Transmisores): VIX en 19.30 (+0.60), Ratio Cobre/Oro en 0.1028 (CPER $36.53) y GEX estimado en -1.15",
         "layer": "Capa 3: Transmisores"
       },
       {
         "step": 4,
-        "time": "09:25 EST",
-        "event": "Evaluación ADUANA O-13: Autorizado comprar PUTs 0DTE de momentum",
-        "layer": "Aduana Robot"
+        "time": "09:20 EST",
+        "event": "Capa 4 & Aduana O-13: Castigo en Tecnología (XLK -2.01%) y Semiconductores (SMH -2.99%). Veredicto: ALLOW_PUTS_ONLY",
+        "layer": "Capa 4 & Aduana Robot"
       },
       {
         "step": 5,
         "time": "09:35 EST",
-        "event": "Ejecución óptima Yoel Sardiñas: Entrada en PUTs 0DTE tras rebote fallido",
+        "event": "Capa 5 (Ejecución): YOEL_CPI_VOLATILITY_BREAKDOWN_PUT — Entrada PUT 0DTE tras fallo en rebote a VWAP",
         "layer": "Capa 5: Micro-Ejecución"
       }
     ]
@@ -86,10 +98,12 @@
       "category": "GEOPOLITICAL",
       "unit": "INDEX",
       "primary_source": "MANUAL",
-      "current_value": 65.0,
+      "current_value": 94.0,
       "expected_value": 50.0,
-      "surprise_shock": 15.0,
-      "regime_signal": "BEARISH"
+      "surprise_shock": 44.0,
+      "regime_signal": "BEARISH",
+      "previous_value": 65.0,
+      "last_updated_at": "2026-11-16T05:05:29.672213+00:00"
     },
     {
       "node_code": "OPEC_SUPPLY_POLICY",
@@ -101,7 +115,7 @@
       "primary_source": "MANUAL",
       "current_value": 1.0,
       "expected_value": 0.0,
-      "surprise_shock": 0.0,
+      "surprise_shock": 1.0,
       "regime_signal": "BEARISH"
     },
     {
@@ -171,7 +185,8 @@
       "current_value": 4.86,
       "expected_value": 4.25,
       "surprise_shock": 0.61,
-      "regime_signal": "BEARISH"
+      "regime_signal": "BEARISH",
+      "last_updated_at": "2026-11-16T05:05:19.344754+00:00"
     },
     {
       "node_code": "YIELD_10Y",
@@ -185,7 +200,9 @@
       "current_value": 5.15,
       "expected_value": 4.8,
       "surprise_shock": 0.35,
-      "regime_signal": "BEARISH"
+      "regime_signal": "BEARISH",
+      "last_updated_at": "2026-11-16T05:05:19.344754+00:00",
+      "previous_value": 5.1
     },
     {
       "node_code": "YIELD_CURVE_10_2",
@@ -196,10 +213,11 @@
       "unit": "BPS",
       "primary_source": "FRED",
       "ticker_or_series_id": "T10Y2Y",
-      "current_value": 55.0,
+      "current_value": 29.0,
       "expected_value": 40.0,
-      "surprise_shock": 15.0,
-      "regime_signal": "NEUTRAL"
+      "surprise_shock": -11.0,
+      "regime_signal": "NEUTRAL",
+      "last_updated_at": "2026-11-16T05:05:19.344754+00:00"
     },
     {
       "node_code": "FED_HAWKISH_BIAS",
@@ -223,12 +241,12 @@
       "unit": "PERCENT",
       "primary_source": "FRED",
       "ticker_or_series_id": "CPIAUCSL",
-      "current_value": 337.476,
+      "current_value": 4.08,
       "expected_value": 3.1,
-      "surprise_shock": 334.376,
+      "surprise_shock": 0.98,
       "regime_signal": "BEARISH",
-      "previous_value": 336.298,
-      "last_updated_at": "2026-11-15T00:13:01.016692+00:00"
+      "previous_value": 4.02,
+      "last_updated_at": "2026-11-16T05:05:19.344754+00:00"
     },
     {
       "node_code": "CPI_SURPRISE",
@@ -238,10 +256,11 @@
       "category": "MACRO_SURPRISE",
       "unit": "PERCENT",
       "primary_source": "BLS",
-      "current_value": 0.3,
+      "current_value": 0.98,
       "expected_value": 0.0,
-      "surprise_shock": 0.0,
-      "regime_signal": "BEARISH"
+      "surprise_shock": 0.98,
+      "regime_signal": "BEARISH",
+      "last_updated_at": "2026-11-16T05:05:19.344754+00:00"
     },
     {
       "node_code": "PPI_HEADLINE",
@@ -269,7 +288,8 @@
       "expected_value": 160.0,
       "surprise_shock": -14.42,
       "regime_signal": "BEARISH",
-      "previous_value": 146.07
+      "previous_value": 146.07,
+      "last_updated_at": "2026-11-16T05:05:19.344754+00:00"
     },
     {
       "node_code": "COPPER_HG",
@@ -284,7 +304,8 @@
       "expected_value": 39.5,
       "surprise_shock": -2.97,
       "regime_signal": "BEARISH",
-      "previous_value": 37.24
+      "previous_value": 37.24,
+      "last_updated_at": "2026-11-16T05:05:19.344754+00:00"
     },
     {
       "node_code": "NON_FARM_PAYROLLS",
@@ -327,7 +348,8 @@
       "expected_value": 28.5,
       "surprise_shock": 1.0,
       "regime_signal": "BEARISH",
-      "previous_value": 29.42
+      "previous_value": 29.42,
+      "last_updated_at": "2026-11-16T05:05:19.344754+00:00"
     },
     {
       "node_code": "GOLD_XAU",
@@ -342,7 +364,8 @@
       "expected_value": 350.0,
       "surprise_shock": 5.45,
       "regime_signal": "NEUTRAL",
-      "previous_value": 354.89
+      "previous_value": 354.89,
+      "last_updated_at": "2026-11-16T05:05:19.344754+00:00"
     },
     {
       "node_code": "COPPER_GOLD_RATIO",
@@ -355,7 +378,8 @@
       "current_value": 0.1028,
       "expected_value": 0.1128,
       "surprise_shock": -0.01,
-      "regime_signal": "BEARISH"
+      "regime_signal": "BEARISH",
+      "last_updated_at": "2026-11-16T05:05:19.344754+00:00"
     },
     {
       "node_code": "REAL_YIELDS_10Y",
@@ -384,7 +408,8 @@
       "expected_value": 15.5,
       "surprise_shock": 3.8,
       "regime_signal": "BEARISH",
-      "previous_value": 18.7
+      "previous_value": 18.7,
+      "last_updated_at": "2026-11-16T05:05:19.344754+00:00"
     },
     {
       "node_code": "CREDIT_SPREAD_HYG_LQD",
@@ -408,10 +433,10 @@
       "category": "OPTION_FLOW",
       "unit": "USD",
       "primary_source": "INTERNAL",
-      "current_value": -1.45,
+      "current_value": -1.15,
       "expected_value": 0.5,
-      "surprise_shock": -1.95,
-      "regime_signal": "EXTREME_VOLATILITY"
+      "surprise_shock": -1.65,
+      "regime_signal": "BEARISH"
     },
     {
       "node_code": "TECH_SECTOR_XLK",
@@ -426,7 +451,8 @@
       "expected_value": 230.0,
       "surprise_shock": -59.72,
       "regime_signal": "BEARISH",
-      "previous_value": 173.77
+      "previous_value": 173.77,
+      "last_updated_at": "2026-11-16T05:05:19.344754+00:00"
     },
     {
       "node_code": "ENERGY_SECTOR_XLE",
@@ -441,7 +467,8 @@
       "expected_value": 91.0,
       "surprise_shock": -26.04,
       "regime_signal": "BULLISH",
-      "previous_value": 64.33
+      "previous_value": 64.33,
+      "last_updated_at": "2026-11-16T05:05:19.344754+00:00"
     },
     {
       "node_code": "FINANCIAL_SECTOR_XLF",
@@ -456,7 +483,8 @@
       "expected_value": 48.2,
       "surprise_shock": 10.48,
       "regime_signal": "NEUTRAL",
-      "previous_value": 58.21
+      "previous_value": 58.21,
+      "last_updated_at": "2026-11-16T05:05:19.344754+00:00"
     },
     {
       "node_code": "SEMICONDUCTORS_SMH",
@@ -467,10 +495,12 @@
       "unit": "USD",
       "primary_source": "FINNHUB",
       "ticker_or_series_id": "SMH",
-      "current_value": 252.1,
+      "current_value": 486.75,
       "expected_value": 260.0,
-      "surprise_shock": -7.9,
-      "regime_signal": "BEARISH"
+      "surprise_shock": 226.75,
+      "regime_signal": "BEARISH",
+      "previous_value": 501.73,
+      "last_updated_at": "2026-11-16T05:05:19.344754+00:00"
     },
     {
       "node_code": "SPX_0DTE_PUT_MOMENTUM",
@@ -480,7 +510,7 @@
       "category": "ASSET",
       "unit": "INDEX",
       "primary_source": "INTERNAL",
-      "current_value": 0.98,
+      "current_value": 0.73,
       "expected_value": 0.2,
       "surprise_shock": 0.68,
       "regime_signal": "BULLISH"
@@ -493,7 +523,7 @@
       "category": "ASSET",
       "unit": "INDEX",
       "primary_source": "INTERNAL",
-      "current_value": 0.02,
+      "current_value": 0.27,
       "expected_value": 0.5,
       "surprise_shock": -0.38,
       "regime_signal": "BEARISH"
@@ -506,7 +536,7 @@
       "category": "ASSET",
       "unit": "INDEX",
       "primary_source": "INTERNAL",
-      "current_value": 0.18,
+      "current_value": 0.3,
       "expected_value": 0.7,
       "surprise_shock": -0.48,
       "regime_signal": "BEARISH"
@@ -521,7 +551,7 @@
       "primary_source": "INTERNAL",
       "current_value": 1.0,
       "expected_value": 0.0,
-      "surprise_shock": 0.0,
+      "surprise_shock": 1.0,
       "regime_signal": "BEARISH"
     }
   ],
@@ -725,6 +755,209 @@
       "transmission_mechanism": "Desplome de Big Tech arrastra al SPX al abismo"
     }
   ],
+  "market_snapshot": {
+    "GLD": {
+      "symbol": "GLD",
+      "date": "2026-11-13",
+      "prev_date": "2026-11-12",
+      "open": 356.27,
+      "high": 357.32,
+      "low": 354.41,
+      "price": 355.45,
+      "prev_close": 354.89,
+      "change_pct": 0.16,
+      "volume": 11863900
+    },
+    "USO": {
+      "symbol": "USO",
+      "date": "2026-11-13",
+      "prev_date": "2026-11-12",
+      "open": 146.69,
+      "high": 147.02,
+      "low": 144.54,
+      "price": 145.58,
+      "prev_close": 146.07,
+      "change_pct": -0.34,
+      "volume": 1967700
+    },
+    "CPER": {
+      "symbol": "CPER",
+      "date": "2026-11-13",
+      "prev_date": "2026-11-12",
+      "open": 36.98,
+      "high": 37.1,
+      "low": 36.51,
+      "price": 36.53,
+      "prev_close": 37.24,
+      "change_pct": -1.91,
+      "volume": 336200
+    },
+    "UUP": {
+      "symbol": "UUP",
+      "date": "2026-11-13",
+      "prev_date": "2026-11-12",
+      "open": 29.44,
+      "high": 29.5,
+      "low": 29.41,
+      "price": 29.5,
+      "prev_close": 29.42,
+      "change_pct": 0.27,
+      "volume": 1585300
+    },
+    "^TNX": {
+      "symbol": "^TNX",
+      "date": "2026-11-13",
+      "prev_date": "2026-11-12",
+      "open": 5.15,
+      "high": 5.17,
+      "low": 5.11,
+      "price": 5.15,
+      "prev_close": 5.1,
+      "change_pct": 1.0,
+      "volume": 0
+    },
+    "^VIX": {
+      "symbol": "^VIX",
+      "date": "2026-11-13",
+      "prev_date": "2026-11-12",
+      "open": 18.78,
+      "high": 20.92,
+      "low": 17.64,
+      "price": 19.3,
+      "prev_close": 18.7,
+      "change_pct": 3.21,
+      "volume": 0
+    },
+    "SPY": {
+      "symbol": "SPY",
+      "date": "2026-11-13",
+      "prev_date": "2026-11-12",
+      "open": 760.07,
+      "high": 760.12,
+      "low": 747.88,
+      "price": 754.37,
+      "prev_close": 757.12,
+      "change_pct": -0.36,
+      "volume": 38391200
+    },
+    "QQQ": {
+      "symbol": "QQQ",
+      "date": "2026-11-13",
+      "prev_date": "2026-11-12",
+      "open": 688.54,
+      "high": 688.75,
+      "low": 671.68,
+      "price": 679.89,
+      "prev_close": 688.17,
+      "change_pct": -1.2,
+      "volume": 41798500
+    },
+    "^GSPC": {
+      "symbol": "^GSPC",
+      "date": "2026-11-13",
+      "prev_date": "2026-11-12",
+      "open": 7616.85,
+      "high": 7621.78,
+      "low": 7499.4,
+      "price": 7561.67,
+      "prev_close": 7592.4,
+      "change_pct": -0.4,
+      "volume": 4372990000
+    },
+    "^NDX": {
+      "symbol": "^NDX",
+      "date": "2026-11-13",
+      "prev_date": "2026-11-12",
+      "open": 28265.54,
+      "high": 28295.8,
+      "low": 27609.71,
+      "price": 27943.74,
+      "prev_close": 28289.19,
+      "change_pct": -1.22,
+      "volume": 8691350000
+    },
+    "XLK": {
+      "symbol": "XLK",
+      "date": "2026-11-13",
+      "prev_date": "2026-11-12",
+      "open": 173.58,
+      "high": 173.65,
+      "low": 167.53,
+      "price": 170.28,
+      "prev_close": 173.77,
+      "change_pct": -2.01,
+      "volume": 10018700
+    },
+    "SMH": {
+      "symbol": "SMH",
+      "date": "2026-11-13",
+      "prev_date": "2026-11-12",
+      "open": 499.93,
+      "high": 500.27,
+      "low": 473.26,
+      "price": 486.75,
+      "prev_close": 501.73,
+      "change_pct": -2.99,
+      "volume": 12382500
+    },
+    "XLE": {
+      "symbol": "XLE",
+      "date": "2026-11-13",
+      "prev_date": "2026-11-12",
+      "open": 64.91,
+      "high": 64.97,
+      "low": 64.16,
+      "price": 64.96,
+      "prev_close": 64.33,
+      "change_pct": 0.98,
+      "volume": 18593200
+    },
+    "XLF": {
+      "symbol": "XLF",
+      "date": "2026-11-13",
+      "prev_date": "2026-11-12",
+      "open": 58.6,
+      "high": 58.71,
+      "low": 58.23,
+      "price": 58.68,
+      "prev_close": 58.21,
+      "change_pct": 0.81,
+      "volume": 29926400
+    }
+  },
+  "news_context": {
+    "sentiment": "BEARISH_PRESSURE",
+    "hawkish_hits": 4,
+    "dovish_hits": 0,
+    "risk_off_hits": 2,
+    "hawkish_ratio": 1.0,
+    "catalysts_found": [
+      {
+        "headline": "Yemen's Houthis say they launched ballistic missiles towards Riyadh airport, financial centre - Reuters",
+        "source": "Reuters",
+        "time": "13:02 EST",
+        "tone": "HAWKISH / RISK-OFF"
+      },
+      {
+        "headline": "Yemeni government force retreats from strait in major setback in war against Houthis - Reuters",
+        "source": "Reuters",
+        "time": "08:24 EST",
+        "tone": "HAWKISH / RISK-OFF"
+      },
+      {
+        "headline": "Saudi-led coalition intercepts missiles towards Riyadh, drones in Eastern Province - Reuters",
+        "source": "Reuters",
+        "time": "21:58 EST",
+        "tone": "HAWKISH / RISK-OFF"
+      },
+      {
+        "headline": "US denies Iran's claim that it attacked early-warning radar in Bahrain - Reuters",
+        "source": "Reuters",
+        "time": "19:44 EST",
+        "tone": "HAWKISH / RISK-OFF"
+      }
+    ]
+  },
   "empirical_calibration": {
     "influencer": "Yoel Sardiñas",
     "reference_trade": "SPX PUT 0DTE (Video -AoEkd22MtU / CPI Breakdown)",
